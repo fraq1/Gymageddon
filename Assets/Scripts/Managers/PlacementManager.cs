@@ -91,9 +91,33 @@ namespace Gymageddon.Managers
             if (!TryGetLaneAndHitAtScreenPosition(Input.mousePosition, out Lane lane, out Collider2D selectedCollider))
                 return;
 
-            if (_selectedCharacter != null || _selectedTrainer != null)
+            if (_selectedCharacter != null)
             {
-                TryPlaceSelected(lane.LaneIndex);
+                bool placed = TryPlaceCharacter(lane.LaneIndex, _selectedCharacter);
+                if (!placed && state == GameState.Preparing)
+                {
+                    Character clickedCharacter = selectedCollider.GetComponentInParent<Character>();
+                    if (clickedCharacter != null && lane.OccupyingCharacter == clickedCharacter)
+                    {
+                        ArmPlacedCharacterForMove(lane, clickedCharacter);
+                        BeginHeldPlacedUnitDragCandidate();
+                    }
+                }
+                return;
+            }
+
+            if (_selectedTrainer != null)
+            {
+                bool placed = TryPlaceTrainer(lane.LaneIndex, _selectedTrainer);
+                if (!placed && state == GameState.Preparing)
+                {
+                    Trainer clickedTrainer = selectedCollider.GetComponentInParent<Trainer>();
+                    if (clickedTrainer != null && lane.OccupyingTrainer == clickedTrainer)
+                    {
+                        ArmPlacedTrainerForMove(lane, clickedTrainer);
+                        BeginHeldPlacedUnitDragCandidate();
+                    }
+                }
                 return;
             }
 
