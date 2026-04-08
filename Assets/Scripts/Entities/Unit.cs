@@ -133,6 +133,8 @@ namespace Gymageddon.Entities
                 }
             }
 
+            // Ensure cleanup even if this Unit gets destroyed before coroutine completion.
+            Destroy(popup, DAMAGE_POPUP_DURATION + 0.1f);
             StartCoroutine(DamagePopupRoutine(popup, text, text.color));
         }
 
