@@ -70,8 +70,8 @@ namespace Gymageddon.Managers
         // ── Input (called every frame by Update) ──────────────────────
         private void Update()
         {
-            // Only allow click-based placement during the Playing state
-            if (GameManager.Instance?.CurrentState != GameState.Playing) return;
+            GameState? state = GameManager.Instance?.CurrentState;
+            if (state != GameState.Playing && state != GameState.Preparing) return;
             if (_selectedCharacter == null && _selectedTrainer == null) return;
 
             if (Input.GetMouseButtonDown(0))

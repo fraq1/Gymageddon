@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -47,6 +48,9 @@ namespace Gymageddon.Bootstrap
         private static readonly Color ENEMY_ZONE_COLOR      = new Color(0.30f, 0.10f, 0.10f, 0.6f);
         private static readonly Color DIVIDER_COLOR         = new Color(0.05f, 0.05f, 0.05f, 1f);
         private static readonly Color BASE_WALL_COLOR       = new Color(0.10f, 0.20f, 0.50f, 1f);
+        private static readonly Color ARENA_BG_COLOR        = new Color(0.04f, 0.06f, 0.10f, 1f);
+        private static readonly Color FLOOR_STRIPE_COLOR    = new Color(0.15f, 0.18f, 0.24f, 0.45f);
+        private static readonly Color TOP_SHADOW_COLOR      = new Color(0.02f, 0.02f, 0.03f, 0.85f);
 
         // ─── Lifecycle ─────────────────────────────────────────────────────────
         private void Awake()
@@ -114,7 +118,9 @@ namespace Gymageddon.Bootstrap
 
             GameObject esGO = new GameObject("EventSystem");
             esGO.AddComponent<EventSystem>();
-            esGO.AddComponent<StandaloneInputModule>();
+            Type inputSystemModule = Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+            if (inputSystemModule != null) esGO.AddComponent(inputSystemModule);
+            else esGO.AddComponent<StandaloneInputModule>();
         }
 
         // ─── Camera ────────────────────────────────────────────────────────────
@@ -132,9 +138,28 @@ namespace Gymageddon.Bootstrap
         // ─── Board background ──────────────────────────────────────────────────
         private void CreateBoardBackground()
         {
-            // Enemy spawn zone (right red strip)
             float boardH = GameBoard.LANE_COUNT * LANE_HEIGHT;
             float midY   = FIRST_LANE_Y - (GameBoard.LANE_COUNT - 1) * 0.5f * LANE_HEIGHT;
+
+            CreateColoredQuad("ArenaBackground",
+                new Vector3(0f, midY),
+                new Vector3(BOARD_RIGHT - BOARD_LEFT, boardH + 1.2f), ARENA_BG_COLOR, -4);
+
+            CreateColoredQuad("ArenaShadowTop",
+                new Vector3(0f, midY + boardH * 0.5f + 0.35f),
+                new Vector3(BOARD_RIGHT - BOARD_LEFT, 0.7f), TOP_SHADOW_COLOR, -3);
+            CreateColoredQuad("ArenaShadowBottom",
+                new Vector3(0f, midY - boardH * 0.5f - 0.35f),
+                new Vector3(BOARD_RIGHT - BOARD_LEFT, 0.7f), TOP_SHADOW_COLOR, -3);
+
+            for (int i = -8; i <= 8; i++)
+            {
+                CreateColoredQuad($"FloorStripe_{i + 8}",
+                    new Vector3(i, midY),
+                    new Vector3(0.06f, boardH + 0.9f), FLOOR_STRIPE_COLOR, -2);
+            }
+
+            // Enemy spawn zone (right red strip)
             float zoneW  = BOARD_RIGHT - CHARACTER_X - SLOT_COLUMN_W * 0.5f;
 
             CreateColoredQuad("EnemyZone",
@@ -340,22 +365,26 @@ namespace Gymageddon.Bootstrap
         private void CreateWorldLabel(string text, Vector3 worldPos,
             Color color, float fontSize = 0.35f)
         {
-            GameObject canvasGO = new GameObject("Label_" + text);
+            GameObject label = new GameObject("Label_" + text);
+            label.transform.position   = worldPos;
+            label.transform.localScale = Vector3.one * fontSize;
 
-            Canvas canvas = canvasGO.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvasGO.transform.position   = worldPos;
-            canvasGO.transform.localScale = Vector3.one * fontSize;
+            Font font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            TextMesh tm = label.AddComponent<TextMesh>();
+            tm.text = text;
+            tm.font = font;
+            tm.fontSize = 64;
+            tm.characterSize = 0.1f;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            tm.color = color;
 
-            GameObject textGO = new GameObject("Text");
-            textGO.transform.SetParent(canvasGO.transform, false);
-            var t = textGO.AddComponent<UnityEngine.UI.Text>();
-            t.text      = text;
-            t.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            t.fontSize  = 12;
-            t.color     = color;
-            t.alignment = TextAnchor.MiddleCenter;
-            t.GetComponent<RectTransform>().sizeDelta = new Vector2(100f, 30f);
+            MeshRenderer renderer = label.GetComponent<MeshRenderer>();
+            if (renderer != null && font != null)
+            {
+                renderer.sharedMaterial = font.material;
+                renderer.sortingOrder = 5;
+            }
         }
 
         private static Sprite CreateColoredSprite(Color color)
