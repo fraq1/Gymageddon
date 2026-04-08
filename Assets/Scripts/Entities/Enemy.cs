@@ -14,6 +14,7 @@ namespace Gymageddon.Entities
         private const float MELEE_RANGE = 0.75f;
         private const float RETARGET_INTERVAL = 0.2f;
         private const float DIAGONAL_VERTICAL_FACTOR = 0.55f;
+        private static int _spawnCounter;
 
         public EnemyData Data        { get; private set; }
         public int       LaneIndex   { get; private set; }
@@ -36,7 +37,7 @@ namespace Gymageddon.Entities
             _leftBoundary = leftBoundary;
             _laneCenterY  = laneCenterY;
             _laneHalfHeight = Mathf.Max(0.1f, laneHalfHeight);
-            float verticalSign = Random.value < 0.5f ? -1f : 1f;
+            float verticalSign = (_spawnCounter++ & 1) == 0 ? -1f : 1f;
             _moveDirection = new Vector3(-1f, verticalSign * DIAGONAL_VERTICAL_FACTOR, 0f).normalized;
             _retargetTimer = 0f;
 
@@ -123,12 +124,12 @@ namespace Gymageddon.Entities
             if (pos.y < minY)
             {
                 pos.y = minY;
-                _moveDirection.y = Mathf.Abs(_moveDirection.y);
+                _moveDirection = new Vector3(_moveDirection.x, Mathf.Abs(_moveDirection.y), _moveDirection.z);
             }
             else if (pos.y > maxY)
             {
                 pos.y = maxY;
-                _moveDirection.y = -Mathf.Abs(_moveDirection.y);
+                _moveDirection = new Vector3(_moveDirection.x, -Mathf.Abs(_moveDirection.y), _moveDirection.z);
             }
 
             transform.position = pos;
