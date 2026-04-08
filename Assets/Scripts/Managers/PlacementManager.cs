@@ -441,8 +441,8 @@ namespace Gymageddon.Managers
             CreateModelPart(root.transform, "ChestStripe", new Vector3(0f, 0.09f, -0.01f), new Vector3(0.20f, 0.08f, 1f), Color.white * 0.9f, DETAIL_MODEL_SORTING_ORDER);
 
             BoxCollider2D collider = root.AddComponent<BoxCollider2D>();
-            collider.size = new Vector2(0.62f, 0.92f);
-            collider.offset = new Vector2(0f, 0.03f);
+            collider.size = Vector2.one;
+            collider.offset = Vector2.zero;
 
             return root;
         }
@@ -462,8 +462,8 @@ namespace Gymageddon.Managers
             CreateModelPart(root.transform, "WeightRight", new Vector3(0.34f, 0.20f, -0.01f), new Vector3(0.10f, 0.18f, 1f), accentColor * 0.8f, DETAIL_MODEL_SORTING_ORDER);
 
             BoxCollider2D collider = root.AddComponent<BoxCollider2D>();
-            collider.size = new Vector2(0.82f, 0.78f);
-            collider.offset = new Vector2(0f, -0.04f);
+            collider.size = Vector2.one;
+            collider.offset = Vector2.zero;
 
             return root;
         }
