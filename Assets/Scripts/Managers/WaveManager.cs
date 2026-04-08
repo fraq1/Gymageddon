@@ -9,7 +9,8 @@ namespace Gymageddon.Managers
 {
     /// <summary>
     /// Spawns enemy waves. Before each wave a preparation phase is triggered:
-    /// 3 random unit cards are offered to the player, and enemies only spawn
+    /// a configurable number of random unit cards are offered to the player,
+    /// and enemies only spawn
     /// after the player presses "Start Wave" or the preparation timer expires.
     /// </summary>
     public class WaveManager : MonoBehaviour
@@ -147,9 +148,7 @@ namespace Gymageddon.Managers
             Queue<int> spawnPlan = new Queue<int>();
             HashSet<int> preview = new HashSet<int>();
 
-            int maxDirections = waveIndex == 0
-                ? Mathf.Min(2, GameBoard.LANE_COUNT) // first wave (zero-based index 0) uses at most 2 lanes
-                : GameBoard.LANE_COUNT;
+            int maxDirections = Mathf.Clamp(waveIndex + 2, 2, GameBoard.LANE_COUNT);
 
             List<int> allowedLanes = PickRandomLanes(maxDirections);
             if (allowedLanes.Count == 0)
@@ -191,18 +190,56 @@ namespace Gymageddon.Managers
         // ── Card picking ──────────────────────────────────────────────
         private List<UnitCard> PickRandomCards(int count)
         {
-            var pool = new List<UnitCard>();
-            foreach (CharacterData c in _characterPool) pool.Add(new UnitCard(c));
-            foreach (TrainerData   t in _trainerPool)   pool.Add(new UnitCard(t));
+            List<UnitCard> characterCards = new List<UnitCard>();
+            List<UnitCard> trainerCards   = new List<UnitCard>();
 
-            // Fisher-Yates shuffle
-            for (int i = pool.Count - 1; i > 0; i--)
+            foreach (CharacterData c in _characterPool) characterCards.Add(new UnitCard(c));
+            foreach (TrainerData   t in _trainerPool)   trainerCards.Add(new UnitCard(t));
+
+            List<UnitCard> result = new List<UnitCard>();
+            int requestedCount = Mathf.Max(1, count);
+            int remainingSlots = requestedCount;
+
+            int minimumCharacterCards = Mathf.Max(1, Mathf.CeilToInt(remainingSlots * 0.5f));
+            int guaranteedCharacters = 0;
+            if (characterCards.Count > 0 && trainerCards.Count > 0)
+                guaranteedCharacters = Mathf.Min(characterCards.Count, minimumCharacterCards);
+            else if (characterCards.Count > 0)
+                guaranteedCharacters = Mathf.Min(characterCards.Count, remainingSlots);
+
+            TakeRandomCards(characterCards, guaranteedCharacters, result);
+            remainingSlots -= result.Count;
+
+            if (remainingSlots > 0)
+                TakeRandomCards(trainerCards, Mathf.Min(remainingSlots, trainerCards.Count), result);
+
+            int additionalNeeded = Mathf.Max(0, requestedCount - result.Count);
+            if (additionalNeeded > 0)
             {
-                int j = Random.Range(0, i + 1);
-                (pool[i], pool[j]) = (pool[j], pool[i]);
+                // characterCards/trainerCards currently contain only leftovers that were not picked above.
+                List<UnitCard> remainingCards = new List<UnitCard>();
+                remainingCards.AddRange(characterCards);
+                remainingCards.AddRange(trainerCards);
+                TakeRandomCards(remainingCards, Mathf.Min(additionalNeeded, remainingCards.Count), result);
             }
 
-            return pool.Count <= count ? pool : pool.GetRange(0, count);
+            return result;
+        }
+
+        private void TakeRandomCards(List<UnitCard> source, int count, List<UnitCard> destination)
+        {
+            for (int i = source.Count - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (source[i], source[j]) = (source[j], source[i]);
+            }
+
+            int take = Mathf.Clamp(count, 0, source.Count);
+            for (int i = 0; i < take; i++)
+                destination.Add(source[i]);
+
+            if (take > 0)
+                source.RemoveRange(0, take);
         }
 
         // ── Helpers ───────────────────────────────────────────────────
