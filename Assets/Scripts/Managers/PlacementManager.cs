@@ -70,6 +70,8 @@ namespace Gymageddon.Managers
         // ── Input (called every frame by Update) ──────────────────────
         private void Update()
         {
+            // Only allow click-based placement during the Playing state
+            if (GameManager.Instance?.CurrentState != GameState.Playing) return;
             if (_selectedCharacter == null && _selectedTrainer == null) return;
 
             if (Input.GetMouseButtonDown(0))
@@ -90,26 +92,26 @@ namespace Gymageddon.Managers
         public void TryPlaceSelected(int laneIndex)
         {
             if (_selectedCharacter != null)
-            {
                 TryPlaceCharacter(laneIndex, _selectedCharacter);
-            }
             else if (_selectedTrainer != null)
-            {
                 TryPlaceTrainer(laneIndex, _selectedTrainer);
-            }
         }
 
-        private void TryPlaceCharacter(int laneIndex, CharacterData data)
+        /// <summary>
+        /// Places a character card on the specified lane. Returns true on success.
+        /// Can be called directly by drag-and-drop handlers.
+        /// </summary>
+        public bool TryPlaceCharacter(int laneIndex, CharacterData data)
         {
             if (!_board.CanPlaceCharacter(laneIndex))
             {
                 Debug.Log($"[PlacementManager] Lane {laneIndex} already has a character.");
-                return;
+                return false;
             }
             if (!_resources.CanAfford(data.energyCost))
             {
                 Debug.Log($"[PlacementManager] Not enough energy ({_resources.CurrentEnergy}/{data.energyCost}).");
-                return;
+                return false;
             }
 
             _resources.SpendEnergy(data.energyCost);
@@ -120,19 +122,24 @@ namespace Gymageddon.Managers
 
             _board.PlaceCharacter(laneIndex, ch);
             ClearSelection();
+            return true;
         }
 
-        private void TryPlaceTrainer(int laneIndex, TrainerData data)
+        /// <summary>
+        /// Places a trainer card on the specified lane. Returns true on success.
+        /// Can be called directly by drag-and-drop handlers.
+        /// </summary>
+        public bool TryPlaceTrainer(int laneIndex, TrainerData data)
         {
             if (!_board.CanPlaceTrainer(laneIndex))
             {
                 Debug.Log($"[PlacementManager] Lane {laneIndex} already has a trainer.");
-                return;
+                return false;
             }
             if (!_resources.CanAfford(data.energyCost))
             {
                 Debug.Log($"[PlacementManager] Not enough energy ({_resources.CurrentEnergy}/{data.energyCost}).");
-                return;
+                return false;
             }
 
             _resources.SpendEnergy(data.energyCost);
@@ -143,6 +150,7 @@ namespace Gymageddon.Managers
 
             _board.PlaceTrainer(laneIndex, t);
             ClearSelection();
+            return true;
         }
 
         // ── Helpers ───────────────────────────────────────────────────

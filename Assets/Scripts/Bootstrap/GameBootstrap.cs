@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Gymageddon.Core;
 using Gymageddon.Data;
 using Gymageddon.Entities;
@@ -55,6 +56,9 @@ namespace Gymageddon.Bootstrap
 
         private void Start()
         {
+            // ── 0. EventSystem (required for UI drag-and-drop events) ──
+            EnsureEventSystem();
+
             // ── 1. Data ────────────────────────────────────────────────
             var (chars, trainers, waves) = CreateDefaultData();
 
@@ -85,6 +89,7 @@ namespace Gymageddon.Bootstrap
 
             foreach (WaveData wd in waves) waveMgr.AddWave(wd);
             waveMgr.SetLaneYPositions(laneYPositions);
+            waveMgr.SetCardPool(chars, trainers);
 
             // ── 5. GameManager ─────────────────────────────────────────
             GameManager gm = CreateManager<GameManager>("GameManager");
@@ -97,6 +102,19 @@ namespace Gymageddon.Bootstrap
             GameObject uiGO = new GameObject("GameUI");
             GameUI ui = uiGO.AddComponent<GameUI>();
             ui.SetUnitOptions(chars, trainers);
+        }
+
+        // ─── EventSystem ───────────────────────────────────────────────────────
+        /// <summary>
+        /// Ensures an EventSystem exists. Required for UI drag events.
+        /// </summary>
+        private void EnsureEventSystem()
+        {
+            if (FindAnyObjectByType<EventSystem>() != null) return;
+
+            GameObject esGO = new GameObject("EventSystem");
+            esGO.AddComponent<EventSystem>();
+            esGO.AddComponent<StandaloneInputModule>();
         }
 
         // ─── Camera ────────────────────────────────────────────────────────────

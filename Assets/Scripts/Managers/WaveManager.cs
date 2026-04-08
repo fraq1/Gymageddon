@@ -8,8 +8,9 @@ using Gymageddon.Entities;
 namespace Gymageddon.Managers
 {
     /// <summary>
-    /// Spawns enemy waves. Enemies arrive from the right side of the board,
-    /// one per lane (randomised), according to WaveData definitions.
+    /// Spawns enemy waves. Before each wave a preparation phase is triggered:
+    /// 3 random unit cards are offered to the player, and enemies only spawn
+    /// after the player presses "Start Wave" or the preparation timer expires.
     /// </summary>
     public class WaveManager : MonoBehaviour
     {
@@ -17,23 +18,50 @@ namespace Gymageddon.Managers
         [SerializeField] private List<WaveData> _waves = new List<WaveData>();
 
         [Header("Spawn")]
-        [SerializeField] private float _spawnX = 9f;     // right edge of board
-        [SerializeField] private float _leftBoundary = -8f; // where enemy reaches base
+        [SerializeField] private float _spawnX = 9f;
+        [SerializeField] private float _leftBoundary = -8f;
+
+        [Header("Preparation Phase")]
+        [SerializeField] private float _preparationTime = 30f; // seconds to place units before wave
+        [SerializeField] private int   _cardsPerWave    = 3;
 
         // Lane Y positions — set by GameBootstrap
         private float[] _laneYPositions = new float[GameBoard.LANE_COUNT];
+
+        // Card pool — set by GameBootstrap
+        private List<CharacterData> _characterPool = new List<CharacterData>();
+        private List<TrainerData>   _trainerPool   = new List<TrainerData>();
 
         // Enemy prefab template (plain GO, script added at runtime)
         private GameObject _enemyTemplate;
 
         private int  _currentWave = -1;
         private bool _wavesStarted;
+        private bool _preparationEnded;
+
+        // ── Lifecycle ─────────────────────────────────────────────────
+        private void Awake()
+        {
+            GameEvents.OnPreparationPhaseEnded += OnPreparationEnded;
+        }
+
+        private void OnDestroy()
+        {
+            GameEvents.OnPreparationPhaseEnded -= OnPreparationEnded;
+        }
+
+        private void OnPreparationEnded() => _preparationEnded = true;
 
         // ── Injection ─────────────────────────────────────────────────
         public void SetLaneYPositions(float[] positions) => _laneYPositions = positions;
         public void SetEnemyTemplate(GameObject template) => _enemyTemplate = template;
-
         public void AddWave(WaveData wave) => _waves.Add(wave);
+
+        public void SetCardPool(List<CharacterData> chars, List<TrainerData> trainers)
+        {
+            _characterPool = new List<CharacterData>(chars);
+            _trainerPool   = new List<TrainerData>(trainers);
+        }
 
         // ── Entry point ───────────────────────────────────────────────
         public void StartWaves()
@@ -46,21 +74,32 @@ namespace Gymageddon.Managers
         // ── Wave loop ─────────────────────────────────────────────────
         private IEnumerator WaveSequence()
         {
+            // Wait one frame so all MonoBehaviour.Start() methods have run
+            // (GameUI subscribes to events in its Start).
+            yield return null;
+
             for (int i = 0; i < _waves.Count; i++)
             {
                 _currentWave = i;
                 WaveData wave = _waves[i];
 
-                GameEvents.RaiseWaveStarted(i + 1, _waves.Count);
-                Debug.Log($"[WaveManager] Wave {i + 1}/{_waves.Count}: {wave.waveName} — waiting {wave.delayBeforeWave}s");
+                // ── Preparation phase: offer cards, wait for player ────
+                _preparationEnded = false;
+                List<UnitCard> cards = PickRandomCards(_cardsPerWave);
+                GameEvents.RaisePreparationPhaseStarted(i + 1, _waves.Count, cards, _preparationTime);
+                Debug.Log($"[WaveManager] Preparation for wave {i + 1}/{_waves.Count} — {cards.Count} cards offered");
 
-                yield return new WaitForSeconds(wave.delayBeforeWave);
+                yield return new WaitUntil(() => _preparationEnded);
+
+                // ── Wave starts ───────────────────────────────────────
+                GameEvents.RaiseWaveStarted(i + 1, _waves.Count);
+                Debug.Log($"[WaveManager] Wave {i + 1}/{_waves.Count}: {wave.waveName} — spawning enemies");
 
                 yield return StartCoroutine(SpawnWave(wave));
 
-                // Wait until all enemies in this wave are dead before starting next
+                // Wait until all enemies in this wave are dead before next
                 yield return new WaitUntil(() => !AnyEnemiesAlive());
-                yield return new WaitForSeconds(3f); // brief gap between waves
+                yield return new WaitForSeconds(3f);
             }
 
             GameEvents.RaiseAllWavesComplete();
@@ -83,7 +122,6 @@ namespace Gymageddon.Managers
 
         private void SpawnEnemy(EnemyData data)
         {
-            // Pick a random lane
             int lane = Random.Range(0, GameBoard.LANE_COUNT);
             float y  = _laneYPositions[lane];
 
@@ -98,11 +136,25 @@ namespace Gymageddon.Managers
             enemy.Init(data, lane, _leftBoundary);
         }
 
-        // ── Helpers ───────────────────────────────────────────────────
-        private bool AnyEnemiesAlive()
+        // ── Card picking ──────────────────────────────────────────────
+        private List<UnitCard> PickRandomCards(int count)
         {
-            return FindAnyObjectByType<Enemy>() != null;
+            var pool = new List<UnitCard>();
+            foreach (CharacterData c in _characterPool) pool.Add(new UnitCard(c));
+            foreach (TrainerData   t in _trainerPool)   pool.Add(new UnitCard(t));
+
+            // Fisher-Yates shuffle
+            for (int i = pool.Count - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (pool[i], pool[j]) = (pool[j], pool[i]);
+            }
+
+            return pool.Count <= count ? pool : pool.GetRange(0, count);
         }
+
+        // ── Helpers ───────────────────────────────────────────────────
+        private bool AnyEnemiesAlive() => FindAnyObjectByType<Enemy>() != null;
 
         private GameObject CreateEnemyGameObject(Color color)
         {
@@ -123,3 +175,4 @@ namespace Gymageddon.Managers
         }
     }
 }
+
