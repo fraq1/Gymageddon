@@ -15,10 +15,8 @@ namespace Gymageddon.Managers
     /// </summary>
     public class PlacementManager : MonoBehaviour
     {
-        private const float OUTLINE_SCALE_MULTIPLIER = 1.18f;
-        private const int OUTLINE_SORTING_ORDER = 1;
-        private const int UNIT_SORTING_ORDER = 2;
-        private const int BADGE_SORTING_ORDER = 3;
+        private const int BASE_MODEL_SORTING_ORDER = 2;
+        private const int DETAIL_MODEL_SORTING_ORDER = 3;
 
         public static PlacementManager Instance { get; private set; }
 
@@ -110,12 +108,7 @@ namespace Gymageddon.Managers
                 return false;
             }
 
-            GameObject go = CreateUnitGameObject(
-                data.bodyColor,
-                new Vector3(0.7f, 0.7f, 1f),
-                "F",
-                new Color(0.95f, 0.95f, 1f),
-                new Color(0.10f, 0.18f, 0.30f, 0.9f));
+            GameObject go = CreateCharacterModelGameObject(data.bodyColor);
             Character ch  = go.AddComponent<Character>();
             ch.Init(data);
 
@@ -136,12 +129,7 @@ namespace Gymageddon.Managers
                 return false;
             }
 
-            GameObject go = CreateUnitGameObject(
-                data.bodyColor,
-                new Vector3(0.6f, 0.6f, 1f),
-                "T",
-                new Color(0.9f, 1f, 0.9f),
-                new Color(0.08f, 0.25f, 0.12f, 0.9f));
+            GameObject go = CreateTrainerModelGameObject(data.bodyColor);
             Trainer t     = go.AddComponent<Trainer>();
             t.Init(data);
 
@@ -151,53 +139,59 @@ namespace Gymageddon.Managers
         }
 
         // ── Helpers ───────────────────────────────────────────────────
-        private GameObject CreateUnitGameObject(Color color, Vector3 scale, string badge,
-            Color badgeColor, Color outlineColor)
+        private GameObject CreateCharacterModelGameObject(Color bodyColor)
         {
-            GameObject go = new GameObject("Unit");
-            CreateOutline(go.transform, outlineColor, scale * OUTLINE_SCALE_MULTIPLIER, OUTLINE_SORTING_ORDER);
+            GameObject root = new GameObject("CharacterModel");
+            Color shadow = Color.Lerp(bodyColor, Color.black, 0.35f);
+            Color skin = new Color(0.97f, 0.84f, 0.68f);
 
-            SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = CreateColoredSprite(color);
-            sr.sortingOrder = UNIT_SORTING_ORDER;
-            go.transform.localScale = scale;
-            CreateBadge(go.transform, badge, badgeColor, BADGE_SORTING_ORDER);
-            // Add a collider so raycasting works
-            go.AddComponent<BoxCollider2D>();
-            return go;
+            CreateModelPart(root.transform, "Torso", new Vector3(0f, 0.02f, 0f), new Vector3(0.30f, 0.34f, 1f), bodyColor, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "Head", new Vector3(0f, 0.33f, 0f), new Vector3(0.20f, 0.20f, 1f), skin, DETAIL_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "LeftArm", new Vector3(-0.23f, 0.06f, 0f), new Vector3(0.11f, 0.28f, 1f), shadow, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "RightArm", new Vector3(0.23f, 0.06f, 0f), new Vector3(0.11f, 0.28f, 1f), shadow, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "LeftLeg", new Vector3(-0.09f, -0.30f, 0f), new Vector3(0.11f, 0.32f, 1f), shadow, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "RightLeg", new Vector3(0.09f, -0.30f, 0f), new Vector3(0.11f, 0.32f, 1f), shadow, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "ChestStripe", new Vector3(0f, 0.09f, -0.01f), new Vector3(0.20f, 0.08f, 1f), Color.white * 0.9f, DETAIL_MODEL_SORTING_ORDER);
+
+            BoxCollider2D collider = root.AddComponent<BoxCollider2D>();
+            collider.size = new Vector2(0.62f, 0.92f);
+            collider.offset = new Vector2(0f, 0.03f);
+
+            return root;
         }
 
-        private void CreateOutline(Transform parent, Color color, Vector3 scale, int sortingOrder)
+        private GameObject CreateTrainerModelGameObject(Color accentColor)
         {
-            GameObject outline = new GameObject("Outline");
-            outline.transform.SetParent(parent, false);
-            outline.transform.localPosition = Vector3.zero;
-            outline.transform.localScale = scale;
+            GameObject root = new GameObject("TrainerModel");
+            Color frame = new Color(0.25f, 0.28f, 0.33f);
+            Color darkFrame = new Color(0.16f, 0.18f, 0.22f);
 
-            SpriteRenderer sr = outline.AddComponent<SpriteRenderer>();
+            CreateModelPart(root.transform, "Platform", new Vector3(0f, -0.28f, 0f), new Vector3(0.72f, 0.14f, 1f), darkFrame, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "LeftPillar", new Vector3(-0.24f, -0.02f, 0f), new Vector3(0.12f, 0.48f, 1f), frame, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "RightPillar", new Vector3(0.24f, -0.02f, 0f), new Vector3(0.12f, 0.48f, 1f), frame, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "TopBar", new Vector3(0f, 0.20f, 0f), new Vector3(0.60f, 0.10f, 1f), frame, BASE_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "Bench", new Vector3(0f, -0.06f, -0.01f), new Vector3(0.42f, 0.14f, 1f), accentColor, DETAIL_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "WeightLeft", new Vector3(-0.34f, 0.20f, -0.01f), new Vector3(0.10f, 0.18f, 1f), accentColor * 0.8f, DETAIL_MODEL_SORTING_ORDER);
+            CreateModelPart(root.transform, "WeightRight", new Vector3(0.34f, 0.20f, -0.01f), new Vector3(0.10f, 0.18f, 1f), accentColor * 0.8f, DETAIL_MODEL_SORTING_ORDER);
+
+            BoxCollider2D collider = root.AddComponent<BoxCollider2D>();
+            collider.size = new Vector2(0.82f, 0.78f);
+            collider.offset = new Vector2(0f, -0.04f);
+
+            return root;
+        }
+
+        private void CreateModelPart(Transform parent, string name, Vector3 localPosition,
+            Vector3 localScale, Color color, int sortingOrder)
+        {
+            GameObject part = new GameObject(name);
+            part.transform.SetParent(parent, false);
+            part.transform.localPosition = localPosition;
+            part.transform.localScale = localScale;
+
+            SpriteRenderer sr = part.AddComponent<SpriteRenderer>();
             sr.sprite = CreateColoredSprite(color);
             sr.sortingOrder = sortingOrder;
-        }
-
-        private void CreateBadge(Transform parent, string text, Color color, int sortingOrder)
-        {
-            GameObject badge = new GameObject($"Badge_{text}");
-            badge.transform.SetParent(parent, false);
-            badge.transform.localPosition = new Vector3(0f, 0f, -0.1f);
-            badge.transform.localScale = Vector3.one * 0.18f;
-
-            TextMesh tm = badge.AddComponent<TextMesh>();
-            tm.text = text;
-            tm.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            tm.fontSize = 96;
-            tm.characterSize = 0.1f;
-            tm.anchor = TextAnchor.MiddleCenter;
-            tm.alignment = TextAlignment.Center;
-            tm.color = color;
-
-            MeshRenderer mr = badge.GetComponent<MeshRenderer>();
-            if (mr != null)
-                mr.sortingOrder = sortingOrder;
         }
 
         private Sprite CreateColoredSprite(Color color)
