@@ -11,6 +11,9 @@ namespace Gymageddon.Entities
     /// </summary>
     public class Enemy : Unit
     {
+        private const float MELEE_RANGE = 0.75f;
+        private const float RETARGET_INTERVAL = 0.2f;
+
         public EnemyData Data        { get; private set; }
         public int       LaneIndex   { get; private set; }
 
@@ -18,8 +21,6 @@ namespace Gymageddon.Entities
         private float _leftBoundary = -8f; // x position of player base
         private bool  _blocked;
         private Character _target;
-        private const float MELEE_RANGE = 0.75f;
-        private const float RETARGET_INTERVAL = 0.2f;
         private float _retargetTimer;
 
         // ── Setup ─────────────────────────────────────────────────────
