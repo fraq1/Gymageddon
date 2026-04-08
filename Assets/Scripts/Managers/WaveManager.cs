@@ -24,7 +24,7 @@ namespace Gymageddon.Managers
 
         [Header("Preparation Phase")]
         [SerializeField] private float _preparationTime = 30f; // seconds to place units before wave
-        [SerializeField] private int   _cardsPerWave    = 5;
+        [SerializeField] private int   _cardsPerWave    = 3;
 
         // Lane Y positions — set by GameBootstrap
         private float[] _laneYPositions = new float[GameBoard.LANE_COUNT];
