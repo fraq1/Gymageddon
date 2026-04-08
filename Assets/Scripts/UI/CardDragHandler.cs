@@ -16,6 +16,8 @@ namespace Gymageddon.UI
     public class CardDragHandler : MonoBehaviour,
         IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
     {
+        private const float LANE_PICK_FALLBACK_RADIUS = 0.08f;
+
         private UnitCard    _card;
         private Transform   _canvasRoot;
         private CanvasGroup _canvasGroup;
@@ -24,6 +26,7 @@ namespace Gymageddon.UI
         private bool        _armedForClickPlacement;
         private Vector3     _baseScale = Vector3.one;
         private static CardDragHandler _armedCard;
+        private static Camera _cachedFallbackCamera;
 
         /// <summary>Must be called right after the GO is created.</summary>
         public void Init(UnitCard card, Transform canvasRoot)
@@ -143,8 +146,7 @@ namespace Gymageddon.UI
         private bool TryGetLaneAtScreenPosition(Vector2 screenPosition, out Lane lane)
         {
             lane = null;
-            Camera cam = Camera.main;
-            if (cam == null) cam = FindAnyObjectByType<Camera>();
+            Camera cam = ResolveCamera();
             if (cam == null) return false;
 
             Vector3 screenPt = new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(cam.transform.position.z));
@@ -156,7 +158,7 @@ namespace Gymageddon.UI
                 return true;
 
             // Small fallback radius helps when release happens near collider border.
-            hits = Physics2D.OverlapCircleAll(worldPt, 0.08f);
+            hits = Physics2D.OverlapCircleAll(worldPt, LANE_PICK_FALLBACK_RADIUS);
             return TryExtractLane(hits, out lane);
         }
 
@@ -175,6 +177,17 @@ namespace Gymageddon.UI
             }
 
             return false;
+        }
+
+        private static Camera ResolveCamera()
+        {
+            Camera cam = Camera.main;
+            if (cam != null) return cam;
+
+            if (_cachedFallbackCamera == null || !_cachedFallbackCamera.isActiveAndEnabled)
+                _cachedFallbackCamera = FindAnyObjectByType<Camera>();
+
+            return _cachedFallbackCamera;
         }
 
         private void HandleAnyUnitPlaced(int _, Character __)
