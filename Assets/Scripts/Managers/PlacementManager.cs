@@ -318,8 +318,10 @@ namespace Gymageddon.Managers
 
             Collider2D[] hits = Physics2D.OverlapPointAll(worldPoint);
             if (hits == null || hits.Length == 0)
+            {
                 hits = Physics2D.OverlapCircleAll(worldPoint, LANE_PICK_FALLBACK_RADIUS);
-            if (hits == null || hits.Length == 0) return false;
+                if (hits == null || hits.Length == 0) return false;
+            }
 
             for (int i = 0; i < hits.Length; i++)
             {
@@ -349,8 +351,10 @@ namespace Gymageddon.Managers
 
             Collider2D[] hits = Physics2D.OverlapPointAll(worldPoint);
             if (hits == null || hits.Length == 0)
+            {
                 hits = Physics2D.OverlapCircleAll(worldPoint, LANE_PICK_FALLBACK_RADIUS);
-            if (hits == null || hits.Length == 0) return false;
+                if (hits == null || hits.Length == 0) return false;
+            }
 
             selectedCollider = hits[0];
             for (int i = 0; i < hits.Length; i++)
