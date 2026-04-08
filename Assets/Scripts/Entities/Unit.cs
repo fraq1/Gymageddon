@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,13 @@ namespace Gymageddon.Entities
     /// </summary>
     public abstract class Unit : MonoBehaviour
     {
+        private const float DAMAGE_POPUP_DURATION = 0.55f;
+        private const float DAMAGE_POPUP_RISE_SPEED = 0.7f;
+        private const float DAMAGE_POPUP_VERTICAL_OFFSET = 0.42f;
+        private const int DAMAGE_POPUP_FONT_SIZE = 42;
+        private const float DAMAGE_POPUP_CHARACTER_SIZE = 0.04f;
+        private static Font _damagePopupFont;
+
         public int MaxHealth    { get; protected set; }
         public int CurrentHealth{ get; protected set; }
         public bool IsDead      { get; private set; }
@@ -29,8 +37,14 @@ namespace Gymageddon.Entities
         public virtual void TakeDamage(int amount)
         {
             if (IsDead) return;
+            if (amount <= 0) return;
+
+            int before = CurrentHealth;
             CurrentHealth -= amount;
             CurrentHealth  = Mathf.Max(CurrentHealth, 0);
+            int appliedDamage = before - CurrentHealth;
+            if (appliedDamage > 0)
+                ShowDamagePopup(appliedDamage);
             UpdateHealthBar();
             if (CurrentHealth <= 0) Die();
         }
@@ -86,6 +100,56 @@ namespace Gymageddon.Entities
             float ratio = (float)CurrentHealth / MaxHealth;
             _healthBarFill.rectTransform.sizeDelta = new Vector2(60f * ratio, 8f);
             _healthBarFill.color = Color.Lerp(Color.red, new Color(0.2f, 0.8f, 0.2f), ratio);
+        }
+
+        private void ShowDamagePopup(int damage)
+        {
+            if (damage <= 0) return;
+
+            GameObject popup = new GameObject("DamagePopup");
+            popup.transform.position = transform.position + new Vector3(0f, DAMAGE_POPUP_VERTICAL_OFFSET, 0f);
+
+            TextMesh text = popup.AddComponent<TextMesh>();
+            text.text = damage.ToString();
+            text.fontSize = DAMAGE_POPUP_FONT_SIZE;
+            text.characterSize = DAMAGE_POPUP_CHARACTER_SIZE;
+            text.alignment = TextAlignment.Center;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.color = this is Enemy ? Color.white : new Color(1f, 0.2f, 0.2f, 1f);
+
+            if (_damagePopupFont == null)
+                _damagePopupFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+            if (_damagePopupFont != null)
+            {
+                text.font = _damagePopupFont;
+                MeshRenderer mr = popup.GetComponent<MeshRenderer>();
+                if (mr != null)
+                {
+                    mr.material = _damagePopupFont.material;
+                    mr.sortingOrder = 20;
+                }
+            }
+
+            StartCoroutine(DamagePopupRoutine(popup, text, text.color));
+        }
+
+        private IEnumerator DamagePopupRoutine(GameObject popup, TextMesh text, Color startColor)
+        {
+            float t = 0f;
+            while (t < DAMAGE_POPUP_DURATION && popup != null && text != null)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.Clamp01(t / DAMAGE_POPUP_DURATION);
+                popup.transform.position += Vector3.up * (DAMAGE_POPUP_RISE_SPEED * Time.deltaTime);
+                Color c = startColor;
+                c.a = 1f - k;
+                text.color = c;
+                yield return null;
+            }
+
+            if (popup != null)
+                Destroy(popup);
         }
     }
 }
