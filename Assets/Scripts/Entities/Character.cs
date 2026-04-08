@@ -35,7 +35,7 @@ namespace Gymageddon.Entities
         public int LaneIndex => _lane != null ? _lane.LaneIndex : -1;
 
         private Lane   _lane;
-        private bool   _attacking;
+        private float _attackCooldown;
         private Transform _rightArm;
         private Vector3 _rightArmBasePos;
         private Vector3 _rightArmBaseScale;
@@ -72,9 +72,10 @@ namespace Gymageddon.Entities
         public void OnPlaced(Lane lane)
         {
             _lane     = lane;
-            _attacking = false;
+            _attackCooldown = EffectiveAttackSpeed > 0f
+                ? 1f / EffectiveAttackSpeed
+                : float.MaxValue;
             _attackVisualInProgress = false;
-            StartCoroutine(AttackRoutine());
         }
 
         public void OnRemoved()
@@ -137,21 +138,23 @@ namespace Gymageddon.Entities
             return true;
         }
 
-        // ── Combat loop ───────────────────────────────────────────────
-        private IEnumerator AttackRoutine()
+        private void Update()
         {
-            while (true)
-            {
-                float interval = EffectiveAttackSpeed > 0f ? 1f / EffectiveAttackSpeed : float.MaxValue;
-                yield return new WaitForSeconds(interval);
+            if (_lane == null || IsDead) return;
 
-                Enemy target = FindNearestEnemy();
-                if (target != null)
-                {
-                    PlayAttackVisual(target.transform.position);
-                    target.TakeDamage(EffectiveAttackDamage);
-                }
+            _attackCooldown -= Time.deltaTime;
+            if (_attackCooldown > 0f) return;
+
+            Enemy target = FindNearestEnemy();
+            if (target != null)
+            {
+                PlayAttackVisual(target.transform.position);
+                target.TakeDamage(EffectiveAttackDamage);
             }
+
+            _attackCooldown = EffectiveAttackSpeed > 0f
+                ? 1f / EffectiveAttackSpeed
+                : float.MaxValue;
         }
 
         private Enemy FindNearestEnemy()

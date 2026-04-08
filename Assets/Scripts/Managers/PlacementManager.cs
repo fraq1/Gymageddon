@@ -18,7 +18,7 @@ namespace Gymageddon.Managers
         private const int BASE_MODEL_SORTING_ORDER = 2;
         private const int DETAIL_MODEL_SORTING_ORDER = 3;
         private const float REPOSITION_SELECTION_SCALE = 1.08f;
-        private const float HELD_DRAG_START_THRESHOLD = 18f;
+        private const float HELD_DRAG_START_THRESHOLD = 8f;
         private const float HELD_DRAG_START_THRESHOLD_SQ = HELD_DRAG_START_THRESHOLD * HELD_DRAG_START_THRESHOLD;
 
         public static PlacementManager Instance { get; private set; }
@@ -88,7 +88,7 @@ namespace Gymageddon.Managers
                 HandleHeldPlacedUnitDragInput();
 
             if (!Input.GetMouseButtonDown(0)) return;
-            if (!TryGetLaneAndHitAtScreenPosition(Input.mousePosition, out Lane lane, out RaycastHit2D selectedHit))
+            if (!TryGetLaneAndHitAtScreenPosition(Input.mousePosition, out Lane lane, out Collider2D selectedCollider))
                 return;
 
             if (_selectedCharacter != null || _selectedTrainer != null)
@@ -105,7 +105,7 @@ namespace Gymageddon.Managers
                     return;
                 }
 
-                Character clickedCharacter = selectedHit.collider.GetComponentInParent<Character>();
+                Character clickedCharacter = selectedCollider.GetComponentInParent<Character>();
                 if (clickedCharacter != null && lane.OccupyingCharacter == clickedCharacter)
                 {
                     ArmPlacedCharacterForMove(lane, clickedCharacter);
@@ -113,7 +113,7 @@ namespace Gymageddon.Managers
                     return;
                 }
 
-                Trainer clickedTrainer = selectedHit.collider.GetComponentInParent<Trainer>();
+                Trainer clickedTrainer = selectedCollider.GetComponentInParent<Trainer>();
                 if (clickedTrainer != null && lane.OccupyingTrainer == clickedTrainer)
                 {
                     ArmPlacedTrainerForMove(lane, clickedTrainer);
@@ -281,22 +281,24 @@ namespace Gymageddon.Managers
             lane = null;
             if (Camera.main == null) return false;
 
-            Ray ray = Camera.main.ScreenPointToRay(screenPosition);
-            RaycastHit2D[] hits = Physics2D.GetRayIntersectionAll(ray);
+            Vector3 worldPoint = Camera.main.ScreenToWorldPoint(
+                new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(Camera.main.transform.position.z)));
+            worldPoint.z = 0f;
+            Collider2D[] hits = Physics2D.OverlapPointAll(worldPoint);
             if (hits == null || hits.Length == 0) return false;
 
             for (int i = 0; i < hits.Length; i++)
             {
-                if (hits[i].collider == null) continue;
-                Character hitCharacter = hits[i].collider.GetComponentInParent<Character>();
+                if (hits[i] == null) continue;
+                Character hitCharacter = hits[i].GetComponentInParent<Character>();
                 if (hitCharacter != null && TryGetLaneForCharacter(hitCharacter, out lane))
                     return true;
 
-                Trainer hitTrainer = hits[i].collider.GetComponentInParent<Trainer>();
+                Trainer hitTrainer = hits[i].GetComponentInParent<Trainer>();
                 if (hitTrainer != null && TryGetLaneForTrainer(hitTrainer, out lane))
                     return true;
 
-                Lane hitLane = hits[i].collider.GetComponentInParent<Lane>();
+                Lane hitLane = hits[i].GetComponentInParent<Lane>();
                 if (hitLane == null) continue;
                 lane = hitLane;
                 return true;
@@ -305,39 +307,41 @@ namespace Gymageddon.Managers
             return false;
         }
 
-        private bool TryGetLaneAndHitAtScreenPosition(Vector2 screenPosition, out Lane lane, out RaycastHit2D selectedHit)
+        private bool TryGetLaneAndHitAtScreenPosition(Vector2 screenPosition, out Lane lane, out Collider2D selectedCollider)
         {
             lane = null;
-            selectedHit = default;
+            selectedCollider = null;
             if (Camera.main == null) return false;
 
-            Ray ray = Camera.main.ScreenPointToRay(screenPosition);
-            RaycastHit2D[] hits = Physics2D.GetRayIntersectionAll(ray);
+            Vector3 worldPoint = Camera.main.ScreenToWorldPoint(
+                new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(Camera.main.transform.position.z)));
+            worldPoint.z = 0f;
+            Collider2D[] hits = Physics2D.OverlapPointAll(worldPoint);
             if (hits == null || hits.Length == 0) return false;
 
-            selectedHit = hits[0];
+            selectedCollider = hits[0];
             for (int i = 0; i < hits.Length; i++)
             {
-                if (hits[i].collider != null &&
-                    (hits[i].collider.GetComponentInParent<Character>() != null ||
-                     hits[i].collider.GetComponentInParent<Trainer>() != null))
+                if (hits[i] != null &&
+                    (hits[i].GetComponentInParent<Character>() != null ||
+                     hits[i].GetComponentInParent<Trainer>() != null))
                 {
-                    selectedHit = hits[i];
+                    selectedCollider = hits[i];
                     break;
                 }
             }
 
-            if (selectedHit.collider == null) return false;
+            if (selectedCollider == null) return false;
 
-            Character selectedCharacter = selectedHit.collider.GetComponentInParent<Character>();
+            Character selectedCharacter = selectedCollider.GetComponentInParent<Character>();
             if (selectedCharacter != null && TryGetLaneForCharacter(selectedCharacter, out lane))
                 return true;
 
-            Trainer selectedTrainer = selectedHit.collider.GetComponentInParent<Trainer>();
+            Trainer selectedTrainer = selectedCollider.GetComponentInParent<Trainer>();
             if (selectedTrainer != null && TryGetLaneForTrainer(selectedTrainer, out lane))
                 return true;
 
-            lane = selectedHit.collider.GetComponentInParent<Lane>();
+            lane = selectedCollider.GetComponentInParent<Lane>();
             return lane != null;
         }
 
