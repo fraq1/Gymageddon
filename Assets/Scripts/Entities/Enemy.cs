@@ -91,9 +91,7 @@ namespace Gymageddon.Entities
             float minDist = float.MaxValue;
             foreach (Character c in all)
             {
-                // Same-lane check via lane index stored on the Character's Lane reference
-                var lane = c.GetComponentInParent<Lane>();
-                if (lane == null || lane.LaneIndex != LaneIndex) continue;
+                if (c.LaneIndex != LaneIndex) continue;
                 if (c.transform.position.x > transform.position.x) continue; // skip those behind the enemy
 
                 float dist = transform.position.x - c.transform.position.x;

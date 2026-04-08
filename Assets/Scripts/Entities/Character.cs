@@ -32,6 +32,7 @@ namespace Gymageddon.Entities
         public float EffectiveAttackSpeed  { get; private set; }
         public float AttackRange           { get; private set; }
         public bool IsEvolved { get; private set; }
+        public int LaneIndex => _lane != null ? _lane.LaneIndex : -1;
 
         private Lane   _lane;
         private bool   _attacking;
@@ -80,6 +81,7 @@ namespace Gymageddon.Entities
         {
             StopAllCoroutines();
             _attackVisualInProgress = false;
+            _lane = null;
         }
 
         // ── Trainer buffs ─────────────────────────────────────────────

@@ -11,6 +11,7 @@ namespace Gymageddon.Entities
     {
         public TrainerData Data { get; private set; }
         public string TrainerName => Data ? Data.trainerName : "Unknown";
+        public int LaneIndex => _lane != null ? _lane.LaneIndex : -1;
 
         private Lane _lane;
 
@@ -27,7 +28,11 @@ namespace Gymageddon.Entities
             _lane = lane;
         }
 
-        public void OnRemoved() => StopAllCoroutines();
+        public void OnRemoved()
+        {
+            StopAllCoroutines();
+            _lane = null;
+        }
 
         // ── Buff application / removal ────────────────────────────────
         public void ApplyBuffTo(Character character)
