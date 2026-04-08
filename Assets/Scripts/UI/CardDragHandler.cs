@@ -153,12 +153,12 @@ namespace Gymageddon.UI
                 : pm.TryPlaceTrainer  (lane.LaneIndex, _card.TrainerData);
         }
 
-        private void HandleAnyUnitPlaced(int laneIndex, Character character)
+        private void HandleAnyUnitPlaced(int _, Character __)
         {
             ConsumeIfArmed();
         }
 
-        private void HandleAnyTrainerPlaced(int laneIndex, Trainer trainer)
+        private void HandleAnyTrainerPlaced(int _, Trainer __)
         {
             ConsumeIfArmed();
         }
