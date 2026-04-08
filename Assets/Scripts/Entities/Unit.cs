@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -117,10 +116,17 @@ namespace Gymageddon.Entities
             text.characterSize = DAMAGE_POPUP_CHARACTER_SIZE;
             text.alignment = TextAlignment.Center;
             text.anchor = TextAnchor.MiddleCenter;
-            text.color = this is Enemy ? DAMAGE_POPUP_ENEMY_COLOR : DAMAGE_POPUP_ALLY_COLOR;
 
+            Color startColor = this is Enemy ? DAMAGE_POPUP_ENEMY_COLOR : DAMAGE_POPUP_ALLY_COLOR;
+            text.color = startColor;
+
+            // Unity 6 ships "LegacyRuntime.ttf"; older versions used "Arial.ttf".
             if (_damagePopupFont == null)
-                _damagePopupFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            {
+                _damagePopupFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                if (_damagePopupFont == null)
+                    _damagePopupFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            }
 
             if (_damagePopupFont != null)
             {
@@ -133,27 +139,11 @@ namespace Gymageddon.Entities
                 }
             }
 
-            // Ensure cleanup even if this Unit gets destroyed before coroutine completion.
-            Destroy(popup, DAMAGE_POPUP_DURATION + 0.1f);
-            StartCoroutine(DamagePopupRoutine(popup, text, text.color));
-        }
-
-        private IEnumerator DamagePopupRoutine(GameObject popup, TextMesh text, Color startColor)
-        {
-            float t = 0f;
-            while (t < DAMAGE_POPUP_DURATION && popup != null && text != null)
-            {
-                t += Time.deltaTime;
-                float k = Mathf.Clamp01(t / DAMAGE_POPUP_DURATION);
-                popup.transform.position += Vector3.up * (DAMAGE_POPUP_RISE_SPEED * Time.deltaTime);
-                Color c = startColor;
-                c.a = 1f - k;
-                text.color = c;
-                yield return null;
-            }
-
-            if (popup != null)
-                Destroy(popup);
+            // DamagePopup runs the animation on the popup's own MonoBehaviour so
+            // StopAllCoroutines() on this unit cannot interrupt the fade, and the
+            // popup correctly self-destructs when the animation finishes.
+            popup.AddComponent<DamagePopup>().Init(text, startColor,
+                DAMAGE_POPUP_DURATION, DAMAGE_POPUP_RISE_SPEED);
         }
     }
 }

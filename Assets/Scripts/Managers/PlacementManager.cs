@@ -291,13 +291,22 @@ namespace Gymageddon.Managers
 
             if (!Input.GetMouseButtonUp(0)) return;
 
-            if (!_heldPlacedUnitDragActive) return;
-
+            bool wasDragging = _heldPlacedUnitDragActive;
             _heldPlacedUnitDragActive = false;
-            if (TryGetLaneAtScreenPosition(Input.mousePosition, out Lane lane))
-                TryRelocateSelectedToLane(lane.LaneIndex);
-            else
+
+            if (!TryGetLaneAtScreenPosition(Input.mousePosition, out Lane lane))
+            {
+                // Released outside any lane — cancel selection.
                 ClearMovedUnitSelection();
+                return;
+            }
+
+            // Move when a real drag occurred OR when released on a different lane
+            // (catches short drags to adjacent lanes without requiring the threshold).
+            // Releasing on the same lane without dragging keeps the unit armed so the
+            // player can still complete the move with a second click on the target.
+            if (wasDragging || lane.LaneIndex != _selectedPlacedFromLane)
+                TryRelocateSelectedToLane(lane.LaneIndex);
         }
 
         private bool TryGetLaneAtScreenPosition(Vector2 screenPosition, out Lane lane)
