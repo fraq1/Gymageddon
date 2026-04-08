@@ -20,6 +20,7 @@ namespace Gymageddon.Managers
         private const float REPOSITION_SELECTION_SCALE = 1.08f;
         private const float HELD_DRAG_START_THRESHOLD = 8f;
         private const float HELD_DRAG_START_THRESHOLD_SQ = HELD_DRAG_START_THRESHOLD * HELD_DRAG_START_THRESHOLD;
+        private const float LANE_PICK_FALLBACK_RADIUS = 0.08f;
 
         public static PlacementManager Instance { get; private set; }
 
@@ -35,6 +36,7 @@ namespace Gymageddon.Managers
         private Vector3 _selectedPlacedBaseScale = Vector3.one;
         private bool _heldPlacedUnitDragActive;
         private Vector2 _heldPlacedUnitDragStartMouse;
+        private static Camera _cachedFallbackCamera;
 
         // Lane Y positions and lane GameObjects (set by GameBootstrap)
         private Lane[] _lanes;
@@ -312,13 +314,14 @@ namespace Gymageddon.Managers
         private bool TryGetLaneAtScreenPosition(Vector2 screenPosition, out Lane lane)
         {
             lane = null;
-            if (Camera.main == null) return false;
+            if (!TryGetWorldPointFromScreen(screenPosition, out Vector3 worldPoint)) return false;
 
-            Vector3 worldPoint = Camera.main.ScreenToWorldPoint(
-                new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(Camera.main.transform.position.z)));
-            worldPoint.z = 0f;
             Collider2D[] hits = Physics2D.OverlapPointAll(worldPoint);
-            if (hits == null || hits.Length == 0) return false;
+            if (hits == null || hits.Length == 0)
+            {
+                hits = Physics2D.OverlapCircleAll(worldPoint, LANE_PICK_FALLBACK_RADIUS);
+                if (hits == null || hits.Length == 0) return false;
+            }
 
             for (int i = 0; i < hits.Length; i++)
             {
@@ -344,13 +347,14 @@ namespace Gymageddon.Managers
         {
             lane = null;
             selectedCollider = null;
-            if (Camera.main == null) return false;
+            if (!TryGetWorldPointFromScreen(screenPosition, out Vector3 worldPoint)) return false;
 
-            Vector3 worldPoint = Camera.main.ScreenToWorldPoint(
-                new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(Camera.main.transform.position.z)));
-            worldPoint.z = 0f;
             Collider2D[] hits = Physics2D.OverlapPointAll(worldPoint);
-            if (hits == null || hits.Length == 0) return false;
+            if (hits == null || hits.Length == 0)
+            {
+                hits = Physics2D.OverlapCircleAll(worldPoint, LANE_PICK_FALLBACK_RADIUS);
+                if (hits == null || hits.Length == 0) return false;
+            }
 
             selectedCollider = hits[0];
             for (int i = 0; i < hits.Length; i++)
@@ -396,6 +400,29 @@ namespace Gymageddon.Managers
             if (laneIndex < 0 || laneIndex >= _lanes.Length) return false;
             lane = _lanes[laneIndex];
             return lane != null;
+        }
+
+        private static bool TryGetWorldPointFromScreen(Vector2 screenPosition, out Vector3 worldPoint)
+        {
+            worldPoint = Vector3.zero;
+            Camera cam = ResolveCamera();
+            if (cam == null) return false;
+
+            worldPoint = cam.ScreenToWorldPoint(
+                new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(cam.transform.position.z)));
+            worldPoint.z = 0f;
+            return true;
+        }
+
+        private static Camera ResolveCamera()
+        {
+            Camera cam = Camera.main;
+            if (cam != null) return cam;
+
+            if (_cachedFallbackCamera == null || !_cachedFallbackCamera.isActiveAndEnabled)
+                _cachedFallbackCamera = FindAnyObjectByType<Camera>();
+
+            return _cachedFallbackCamera;
         }
 
         // ── Helpers ───────────────────────────────────────────────────
