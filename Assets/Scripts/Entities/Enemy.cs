@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Threading;
 using UnityEngine;
 using Gymageddon.Core;
 using Gymageddon.Data;
@@ -15,7 +14,7 @@ namespace Gymageddon.Entities
         private const float MELEE_RANGE = 0.75f;
         private const float RETARGET_INTERVAL = 0.2f;
         private const float DIAGONAL_VERTICAL_FACTOR = 0.55f;
-        private static int _spawnCounter;
+        private static bool _nextDiagonalUp;
 
         public EnemyData Data        { get; private set; }
         public int       LaneIndex   { get; private set; }
@@ -38,7 +37,8 @@ namespace Gymageddon.Entities
             _leftBoundary = leftBoundary;
             _laneCenterY  = laneCenterY;
             _laneHalfHeight = Mathf.Max(0.1f, laneHalfHeight);
-            float verticalSign = (Interlocked.Increment(ref _spawnCounter) & 1) == 0 ? -1f : 1f;
+            _nextDiagonalUp = !_nextDiagonalUp;
+            float verticalSign = _nextDiagonalUp ? 1f : -1f;
             _moveDirection = new Vector3(-1f, verticalSign * DIAGONAL_VERTICAL_FACTOR, 0f).normalized;
             _retargetTimer = 0f;
 
