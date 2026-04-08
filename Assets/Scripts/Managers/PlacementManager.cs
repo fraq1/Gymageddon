@@ -17,6 +17,7 @@ namespace Gymageddon.Managers
     {
         private const int BASE_MODEL_SORTING_ORDER = 2;
         private const int DETAIL_MODEL_SORTING_ORDER = 3;
+        private const float REPOSITION_SELECTION_SCALE = 1.08f;
 
         public static PlacementManager Instance { get; private set; }
 
@@ -185,7 +186,7 @@ namespace Gymageddon.Managers
             _selectedPlacedCharacter = character;
             _selectedPlacedFromLane = lane.LaneIndex;
             _selectedPlacedBaseScale = character.transform.localScale;
-            character.transform.localScale = _selectedPlacedBaseScale * 1.08f;
+            character.transform.localScale = _selectedPlacedBaseScale * REPOSITION_SELECTION_SCALE;
             Debug.Log($"[PlacementManager] Armed fighter from lane {lane.LaneIndex + 1} for reposition.");
         }
 
@@ -195,7 +196,7 @@ namespace Gymageddon.Managers
             _selectedPlacedTrainer = trainer;
             _selectedPlacedFromLane = lane.LaneIndex;
             _selectedPlacedBaseScale = trainer.transform.localScale;
-            trainer.transform.localScale = _selectedPlacedBaseScale * 1.08f;
+            trainer.transform.localScale = _selectedPlacedBaseScale * REPOSITION_SELECTION_SCALE;
             Debug.Log($"[PlacementManager] Armed trainer from lane {lane.LaneIndex + 1} for reposition.");
         }
 

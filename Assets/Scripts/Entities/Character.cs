@@ -11,7 +11,12 @@ namespace Gymageddon.Entities
     /// </summary>
     public class Character : Unit
     {
+        // Range where fighters are visually represented as "throwing" instead of punching.
         private const float RANGED_VISUAL_THRESHOLD = 3.2f;
+        private const float PUNCH_VISUAL_DURATION = 0.12f;
+        private const float PUNCH_VISUAL_EXTENSION_X = 0.11f;
+        private static readonly Vector3 PROJECTILE_SPAWN_OFFSET = new Vector3(0.25f, 0.12f, 0f);
+        private static readonly Vector3 PROJECTILE_SCALE = new Vector3(0.14f, 0.14f, 1f);
 
         // Loaded from CharacterData
         public CharacterData Data { get; private set; }
@@ -146,8 +151,8 @@ namespace Gymageddon.Entities
             }
 
             float t = 0f;
-            float duration = 0.12f;
-            Vector3 endPos = _rightArmBasePos + new Vector3(0.11f, 0f, 0f);
+            float duration = PUNCH_VISUAL_DURATION;
+            Vector3 endPos = _rightArmBasePos + new Vector3(PUNCH_VISUAL_EXTENSION_X, 0f, 0f);
             Vector3 endScale = new Vector3(_rightArmBaseScale.x * 1.25f, _rightArmBaseScale.y, _rightArmBaseScale.z);
             while (t < duration)
             {
@@ -177,8 +182,8 @@ namespace Gymageddon.Entities
         {
             _attackVisualInProgress = true;
             GameObject projectile = new GameObject("FighterProjectile");
-            projectile.transform.position = transform.position + new Vector3(0.25f, 0.12f, 0f);
-            projectile.transform.localScale = new Vector3(0.14f, 0.14f, 1f);
+            projectile.transform.position = transform.position + PROJECTILE_SPAWN_OFFSET;
+            projectile.transform.localScale = PROJECTILE_SCALE;
 
             SpriteRenderer sr = projectile.AddComponent<SpriteRenderer>();
             SpriteRenderer sourceRenderer = _rightArm != null
