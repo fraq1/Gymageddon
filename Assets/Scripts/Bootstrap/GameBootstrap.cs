@@ -305,12 +305,22 @@ namespace Gymageddon.Bootstrap
                 new WaveData.EnemySpawn { enemyData = couchPotato, count = 7, spawnInterval = 2.2f, delayBeforeGroup = 0f },
                 new WaveData.EnemySpawn { enemyData = fastFoodFan, count = 5, spawnInterval = 2.6f, delayBeforeGroup = 4f });
 
-            WaveData wave3 = CreateWaveData("Wave 3 — The Final!", 10f,
+            WaveData wave3 = CreateWaveData("Wave 3 — Combo Rush", 10f,
                 new WaveData.EnemySpawn { enemyData = fastFoodFan, count = 7, spawnInterval = 1.9f, delayBeforeGroup = 0f },
                 new WaveData.EnemySpawn { enemyData = skeptic,     count = 6, spawnInterval = 2.2f, delayBeforeGroup = 5f },
                 new WaveData.EnemySpawn { enemyData = couchPotato, count = 5, spawnInterval = 1.4f, delayBeforeGroup = 9f });
 
-            return (chars, trainers, new List<WaveData> { wave1, wave2, wave3 });
+            WaveData wave4 = CreateWaveData("Wave 4 — Relentless", 11f,
+                new WaveData.EnemySpawn { enemyData = couchPotato, count = 8, spawnInterval = 1.5f, delayBeforeGroup = 0f },
+                new WaveData.EnemySpawn { enemyData = fastFoodFan, count = 8, spawnInterval = 1.4f, delayBeforeGroup = 3f },
+                new WaveData.EnemySpawn { enemyData = skeptic,     count = 6, spawnInterval = 1.8f, delayBeforeGroup = 7f });
+
+            WaveData wave5 = CreateWaveData("Wave 5 — The Final Burn", 12f,
+                new WaveData.EnemySpawn { enemyData = skeptic,     count = 9, spawnInterval = 1.4f, delayBeforeGroup = 0f },
+                new WaveData.EnemySpawn { enemyData = fastFoodFan, count = 10, spawnInterval = 1.2f, delayBeforeGroup = 3f },
+                new WaveData.EnemySpawn { enemyData = couchPotato, count = 10, spawnInterval = 1.1f, delayBeforeGroup = 6f });
+
+            return (chars, trainers, new List<WaveData> { wave1, wave2, wave3, wave4, wave5 });
         }
 
         // ─── Data factories ────────────────────────────────────────────────────

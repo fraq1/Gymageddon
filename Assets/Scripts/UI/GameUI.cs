@@ -39,6 +39,8 @@ namespace Gymageddon.UI
         private int         _currentPrepWaveNumber;
         private readonly Dictionary<int, List<int>> _waveDirectionPreview = new Dictionary<int, List<int>>();
         private readonly List<Text> _laneDirectionRows = new List<Text>();
+        private const float CardWidth = 150f;
+        private const float CardSpacing = 16f;
 
         // Canvas root (needed by CardDragHandler for ghost parenting)
         private Canvas _canvas;
@@ -146,10 +148,10 @@ namespace Gymageddon.UI
                 foreach (Transform child in _cardsContainer)
                     Destroy(child.gameObject);
 
-                float totalW  = cards.Count * 110f - 10f; // 10px gap
-                float startX  = -totalW * 0.5f + 50f;
+                float totalW  = cards.Count * CardWidth + Mathf.Max(0, cards.Count - 1) * CardSpacing;
+                float startX  = -totalW * 0.5f + CardWidth * 0.5f;
                 for (int i = 0; i < cards.Count; i++)
-                    CreateDraggableCard(_cardsContainer, cards[i], startX + i * 110f);
+                    CreateDraggableCard(_cardsContainer, cards[i], new Vector2(startX + i * (CardWidth + CardSpacing), 0f));
             }
 
             if (_preparationPanel) _preparationPanel.SetActive(true);
@@ -246,7 +248,7 @@ namespace Gymageddon.UI
                 new Vector2(0f, -40f), new Vector2(0f, 0f),
                 new Color(0f, 0f, 0f, 0.6f));
 
-            _waveText = CreateText("WaveText", hud.transform, "Wave 1/3",
+            _waveText = CreateText("WaveText", hud.transform, "Wave 1/5",
                 TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(0f, 0f), new Vector2(200f, 40f), 22);
 
@@ -307,12 +309,12 @@ namespace Gymageddon.UI
             // Semi-transparent bottom panel (taller than selection bar)
             _preparationPanel = CreatePanel("PreparationPanel", canvasTransform,
                 new Vector2(0f, 0f), new Vector2(1f, 0f),
-                new Vector2(0f, 0f), new Vector2(0f, 160f),
+                new Vector2(0f, 0f), new Vector2(0f, 250f),
                 new Color(0.05f, 0.05f, 0.15f, 0.92f));
 
             // ── Top row: wave name | timer | start button ──────────────
             _prepWaveText = CreateText("PrepWaveText", _preparationPanel.transform,
-                "Wave 1/3 — Place Your Units!",
+                "Wave 1/5 — Place Your Units!",
                 TextAnchor.MiddleLeft,
                 new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(12f, -22f), new Vector2(400f, 36f), 18, Color.white);
@@ -361,10 +363,10 @@ namespace Gymageddon.UI
             GameObject container = new GameObject("CardsContainer");
             container.transform.SetParent(_preparationPanel.transform, false);
             RectTransform crt = container.AddComponent<RectTransform>();
-            crt.anchorMin        = new Vector2(0.5f, 0f);
-            crt.anchorMax        = new Vector2(0.5f, 1f);
-            crt.anchoredPosition = new Vector2(0f, -10f);
-            crt.sizeDelta        = new Vector2(400f, 0f);
+            crt.anchorMin = new Vector2(0f, 0f);
+            crt.anchorMax = new Vector2(1f, 1f);
+            crt.offsetMin = new Vector2(12f, 12f);
+            crt.offsetMax = new Vector2(-250f, -78f);
             _cardsContainer      = container.transform;
 
             _preparationPanel.SetActive(false);
@@ -396,7 +398,7 @@ namespace Gymageddon.UI
         }
 
         /// <summary>Creates a draggable card inside the cards container.</summary>
-        private void CreateDraggableCard(Transform parent, UnitCard card, float xPos)
+        private void CreateDraggableCard(Transform parent, UnitCard card, Vector2 anchoredPos)
         {
             GameObject go = new GameObject($"Card_{card.Name}");
             go.transform.SetParent(parent, false);
@@ -407,33 +409,33 @@ namespace Gymageddon.UI
             RectTransform rt = go.GetComponent<RectTransform>();
             rt.anchorMin        = new Vector2(0.5f, 0.5f);
             rt.anchorMax        = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(xPos, 0f);
-            rt.sizeDelta        = new Vector2(130f, 130f);
+            rt.anchoredPosition = anchoredPos;
+            rt.sizeDelta        = new Vector2(CardWidth, 152f);
 
             // Type badge
             CreateText("Type", go.transform, card.TypeLabel,
                 TextAnchor.UpperCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 50f), new Vector2(120f, 24f), 11,
+                new Vector2(0f, 58f), new Vector2(138f, 24f), 11,
                 new Color(1f, 1f, 0.6f));
 
             // Unit name
             CreateText("Name", go.transform, card.Name,
                 TextAnchor.MiddleCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 32f), new Vector2(120f, 28f), 12, Color.white);
+                new Vector2(0f, 40f), new Vector2(138f, 28f), 12, Color.white);
 
             // Stats / buff details
             CreateText("Stats", go.transform, card.StatsSummary,
                 TextAnchor.MiddleCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 6f), new Vector2(122f, 34f), 10, new Color(0.95f, 0.96f, 1f));
+                new Vector2(0f, 14f), new Vector2(138f, 34f), 10, new Color(0.95f, 0.96f, 1f));
 
             // Description
             Text desc = CreateText("Description", go.transform, card.Description,
                 TextAnchor.UpperCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -18f), new Vector2(120f, 46f), 9, new Color(0.86f, 0.9f, 0.94f));
+                new Vector2(0f, -14f), new Vector2(138f, 58f), 9, new Color(0.86f, 0.9f, 0.94f));
             desc.horizontalOverflow = HorizontalWrapMode.Wrap;
             desc.verticalOverflow = VerticalWrapMode.Truncate;
 
@@ -441,7 +443,7 @@ namespace Gymageddon.UI
             CreateText("Hint", go.transform, "drag →",
                 TextAnchor.LowerCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -50f), new Vector2(120f, 18f), 9,
+                new Vector2(0f, -62f), new Vector2(138f, 18f), 9,
                 new Color(0.8f, 0.8f, 0.8f, 0.7f));
 
             // Drag handler component
