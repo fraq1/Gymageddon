@@ -52,11 +52,11 @@ namespace Gymageddon.Entities
             _blocked = _target != null && !_target.IsDead && IsTargetInMeleeRange(_target);
             if (_blocked) return;
             Vector3 position = transform.position;
-            position += Vector3.left * (_moveSpeed * Time.deltaTime);
+            position.x -= _moveSpeed * Time.deltaTime;
             position.y = _laneY;
             transform.position = position;
 
-            if (transform.position.x <= _leftBoundary)
+            if (position.x <= _leftBoundary)
             {
                 GameEvents.RaiseEnemyReachedBase(LaneIndex);
                 Destroy(gameObject);
