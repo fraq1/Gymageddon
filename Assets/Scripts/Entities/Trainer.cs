@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using Gymageddon.Core;
 using Gymageddon.Data;
@@ -14,7 +13,6 @@ namespace Gymageddon.Entities
         public string TrainerName => Data ? Data.trainerName : "Unknown";
 
         private Lane _lane;
-        private Coroutine _energyRegenRoutine;
 
         // ── Setup ─────────────────────────────────────────────────────
         public void Init(TrainerData data)
@@ -27,9 +25,6 @@ namespace Gymageddon.Entities
         public void OnPlaced(Lane lane)
         {
             _lane = lane;
-
-            if (Data.effectType == TrainerEffectType.EnergyRegen && Data.energyRegenPerSecond > 0f)
-                _energyRegenRoutine = StartCoroutine(EnergyRegenRoutine());
         }
 
         public void OnRemoved() => StopAllCoroutines();
@@ -49,9 +44,6 @@ namespace Gymageddon.Entities
                 case TrainerEffectType.HealthBoost:
                     character.ApplyHealthBoost(Data.effectValue);
                     break;
-                case TrainerEffectType.EnergyRegen:
-                    // Energy handled via EnergyRegenRoutine; no direct character buff
-                    break;
             }
         }
 
@@ -63,17 +55,6 @@ namespace Gymageddon.Entities
                 case TrainerEffectType.DamageBoost:  character.RemoveDamageBoost(); break;
                 case TrainerEffectType.AttackSpeedBoost: character.RemoveSpeedBoost(); break;
                 case TrainerEffectType.HealthBoost:  character.RemoveHealthBoost(); break;
-            }
-        }
-
-        // ── Energy regen loop ─────────────────────────────────────────
-        private IEnumerator EnergyRegenRoutine()
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(1f);
-                if (Managers.ResourceManager.Instance != null)
-                    Managers.ResourceManager.Instance.AddEnergy(Mathf.RoundToInt(Data.energyRegenPerSecond));
             }
         }
 

@@ -14,6 +14,8 @@ namespace Gymageddon.Managers
     /// </summary>
     public class WaveManager : MonoBehaviour
     {
+        private const float ENEMY_ROTATION_DEGREES = 45f;
+
         [Header("Waves")]
         [SerializeField] private List<WaveData> _waves = new List<WaveData>();
 
@@ -133,7 +135,7 @@ namespace Gymageddon.Managers
 
             GameObject go = _enemyTemplate != null
                 ? Instantiate(_enemyTemplate)
-                : CreateEnemyGameObject(data.bodyColor);
+                : CreateEnemyGameObject(data.bodyColor, lane);
 
             go.name = $"Enemy_{data.enemyName}_L{lane}";
             go.transform.position = new Vector3(_spawnX, y, 0f);
@@ -208,14 +210,52 @@ namespace Gymageddon.Managers
         // ── Helpers ───────────────────────────────────────────────────
         private bool AnyEnemiesAlive() => FindAnyObjectByType<Enemy>() != null;
 
-        private GameObject CreateEnemyGameObject(Color color)
+        private GameObject CreateEnemyGameObject(Color color, int lane)
         {
             GameObject go = new GameObject("Enemy");
+            CreateEnemyOutline(go.transform, new Color(0.35f, 0.05f, 0.05f, 0.9f));
+
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = CreateColoredSprite(color);
             sr.sortingOrder = 2;
+            go.transform.rotation = Quaternion.Euler(0f, 0f, ENEMY_ROTATION_DEGREES);
             go.transform.localScale = new Vector3(0.7f, 0.7f, 1f);
+            CreateEnemyBadge(go.transform, $"M{lane + 1}");
             return go;
+        }
+
+        private void CreateEnemyOutline(Transform parent, Color color)
+        {
+            GameObject outline = new GameObject("EnemyOutline");
+            outline.transform.SetParent(parent, false);
+            outline.transform.localPosition = Vector3.zero;
+            outline.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+
+            SpriteRenderer sr = outline.AddComponent<SpriteRenderer>();
+            sr.sprite = CreateColoredSprite(color);
+            sr.sortingOrder = 1;
+        }
+
+        private void CreateEnemyBadge(Transform parent, string text)
+        {
+            GameObject badge = new GameObject("EnemyBadge");
+            badge.transform.SetParent(parent, false);
+            badge.transform.localPosition = new Vector3(0f, 0f, -0.1f);
+            badge.transform.localRotation = Quaternion.Euler(0f, 0f, -ENEMY_ROTATION_DEGREES);
+            badge.transform.localScale = Vector3.one * 0.16f;
+
+            TextMesh tm = badge.AddComponent<TextMesh>();
+            tm.text = text;
+            tm.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            tm.fontSize = 80;
+            tm.characterSize = 0.1f;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            tm.color = new Color(1f, 0.95f, 0.85f);
+
+            MeshRenderer mr = badge.GetComponent<MeshRenderer>();
+            if (mr != null)
+                mr.sortingOrder = 3;
         }
 
         private Sprite CreateColoredSprite(Color color)
