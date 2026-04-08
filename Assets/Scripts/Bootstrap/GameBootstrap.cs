@@ -369,7 +369,8 @@ namespace Gymageddon.Bootstrap
             label.transform.position   = worldPos;
             label.transform.localScale = Vector3.one * fontSize;
 
-            Font font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font == null) font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             TextMesh tm = label.AddComponent<TextMesh>();
             tm.text = text;
             tm.font = font;
