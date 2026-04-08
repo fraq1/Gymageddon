@@ -9,7 +9,8 @@ namespace Gymageddon.Managers
 {
     /// <summary>
     /// Spawns enemy waves. Before each wave a preparation phase is triggered:
-    /// random unit cards are offered to the player, and enemies only spawn
+    /// a configurable number of random unit cards are offered to the player,
+    /// and enemies only spawn
     /// after the player presses "Start Wave" or the preparation timer expires.
     /// </summary>
     public class WaveManager : MonoBehaviour
@@ -198,8 +199,9 @@ namespace Gymageddon.Managers
             List<UnitCard> result = new List<UnitCard>();
             int remainingSlots = Mathf.Max(1, count);
 
+            int minimumCharacterCards = Mathf.Max(1, Mathf.CeilToInt(remainingSlots * 0.5f));
             int guaranteedCharacters = characterCards.Count > 0 && trainerCards.Count > 0
-                ? Mathf.Min(characterCards.Count, Mathf.Max(1, Mathf.CeilToInt(remainingSlots * 0.5f)))
+                ? Mathf.Min(characterCards.Count, minimumCharacterCards)
                 : 0;
 
             TakeRandomCards(characterCards, guaranteedCharacters, result);
