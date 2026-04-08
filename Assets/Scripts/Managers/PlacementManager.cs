@@ -15,6 +15,8 @@ namespace Gymageddon.Managers
     /// </summary>
     public class PlacementManager : MonoBehaviour
     {
+        private const float OUTLINE_SCALE_MULTIPLIER = 1.18f;
+
         public static PlacementManager Instance { get; private set; }
 
         private GameBoard _board;
@@ -150,7 +152,7 @@ namespace Gymageddon.Managers
             Color badgeColor, Color outlineColor)
         {
             GameObject go = new GameObject("Unit");
-            CreateOutline(go.transform, outlineColor, scale * 1.18f, 1);
+            CreateOutline(go.transform, outlineColor, scale * OUTLINE_SCALE_MULTIPLIER, 1);
 
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = CreateColoredSprite(color);

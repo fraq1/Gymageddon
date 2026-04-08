@@ -14,6 +14,8 @@ namespace Gymageddon.Managers
     /// </summary>
     public class WaveManager : MonoBehaviour
     {
+        private const float ENEMY_ROTATION_DEGREES = 45f;
+
         [Header("Waves")]
         [SerializeField] private List<WaveData> _waves = new List<WaveData>();
 
@@ -216,7 +218,7 @@ namespace Gymageddon.Managers
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = CreateColoredSprite(color);
             sr.sortingOrder = 2;
-            go.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+            go.transform.rotation = Quaternion.Euler(0f, 0f, ENEMY_ROTATION_DEGREES);
             go.transform.localScale = new Vector3(0.7f, 0.7f, 1f);
             CreateEnemyBadge(go.transform, $"M{lane + 1}");
             return go;

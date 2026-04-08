@@ -29,6 +29,7 @@ namespace Gymageddon.Managers
         // ── Public API ────────────────────────────────────────────────
         public bool CanAfford(int cost) => true;
 
+        // Signature is kept for compatibility with existing callers.
         public bool SpendEnergy(int cost)
         {
             return true;

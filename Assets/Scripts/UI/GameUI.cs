@@ -171,7 +171,7 @@ namespace Gymageddon.UI
             if (!_waveDirectionPreview.TryGetValue(waveNumber, out List<int> lanes) || lanes.Count == 0)
             {
                 _prepDirectionsText.text = "⚠ Enemy directions: unknown";
-                RefreshLaneDirectionRows(null);
+                RefreshLaneDirectionRows(new List<int>());
                 return;
             }
 
@@ -189,18 +189,21 @@ namespace Gymageddon.UI
         {
             if (_laneDirectionRows.Count == 0) return;
 
-            HashSet<int> activeSet = activeLanes != null ? new HashSet<int>(activeLanes) : null;
+            HashSet<int> activeSet = new HashSet<int>(activeLanes);
+            bool hasPreview = activeLanes.Count > 0;
             for (int lane = 0; lane < _laneDirectionRows.Count; lane++)
             {
                 Text row = _laneDirectionRows[lane];
                 if (row == null) continue;
 
-                bool isActive = activeSet != null && activeSet.Contains(lane);
-                row.text = isActive
-                    ? $"Lane {lane + 1}:  ◀ MONSTERS"
-                    : activeSet == null
-                        ? $"Lane {lane + 1}:  ?"
-                        : $"Lane {lane + 1}:  —";
+                bool isActive = activeSet.Contains(lane);
+                if (isActive)
+                    row.text = $"Lane {lane + 1}:  ◀ MONSTERS";
+                else if (!hasPreview)
+                    row.text = $"Lane {lane + 1}:  ?";
+                else
+                    row.text = $"Lane {lane + 1}:  —";
+
                 row.color = isActive
                     ? new Color(1f, 0.7f, 0.4f)
                     : new Color(0.72f, 0.78f, 0.86f, 0.95f);
