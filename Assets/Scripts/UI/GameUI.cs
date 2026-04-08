@@ -311,6 +311,8 @@ namespace Gymageddon.UI
                 new Vector2(0f, 0f), new Vector2(1f, 0f),
                 new Vector2(0f, 0f), new Vector2(0f, 250f),
                 new Color(0.05f, 0.05f, 0.15f, 0.92f));
+            Image prepPanelImage = _preparationPanel.GetComponent<Image>();
+            if (prepPanelImage != null) prepPanelImage.raycastTarget = false;
 
             // ── Top row: wave name | timer | start button ──────────────
             _prepWaveText = CreateText("PrepWaveText", _preparationPanel.transform,
@@ -483,6 +485,7 @@ namespace Gymageddon.UI
             t.fontSize  = fontSize;
             t.alignment = align;
             t.color     = color ?? Color.white;
+            t.raycastTarget = false;
             RectTransform rt = go.GetComponent<RectTransform>();
             rt.anchorMin = anchorMin;
             rt.anchorMax = anchorMax;

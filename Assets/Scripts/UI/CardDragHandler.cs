@@ -21,7 +21,6 @@ namespace Gymageddon.UI
         private CanvasGroup _canvasGroup;
         private GameObject  _ghost;
         private bool        _placed;
-        private Camera      _camera;
         private bool        _armedForClickPlacement;
         private Vector3     _baseScale = Vector3.one;
         private static CardDragHandler _armedCard;
@@ -38,7 +37,6 @@ namespace Gymageddon.UI
             _canvasGroup = GetComponent<CanvasGroup>();
             if (_canvasGroup == null)
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
-            _camera = Camera.main;
             _baseScale = transform.localScale;
 
             GameEvents.OnCharacterPlaced += HandleAnyUnitPlaced;
@@ -102,20 +100,9 @@ namespace Gymageddon.UI
 
             if (_placed) return;
 
-            if (_camera == null) return; // no main camera — cannot convert to world space
-
-            // Convert screen drop position to world space (camera at z = -10)
-            Vector3 screenPt = new Vector3(eventData.position.x, eventData.position.y,
-                Mathf.Abs(_camera.transform.position.z));
-            Vector3 worldPt  = _camera.ScreenToWorldPoint(screenPt);
-            worldPt.z = 0f;
-
-            // Find a lane collider under the drop point
-            Collider2D hit = Physics2D.OverlapPoint(worldPt);
-            if (hit != null)
+            if (TryGetLaneAtScreenPosition(eventData.position, out Lane lane))
             {
-                Lane lane = hit.GetComponentInParent<Lane>();
-                if (lane != null && TryPlaceOnLane(lane))
+                if (TryPlaceOnLane(lane))
                 {
                     _placed = true;
                     if (_armedCard == this) _armedCard = null;
@@ -151,6 +138,43 @@ namespace Gymageddon.UI
             return _card.IsCharacter
                 ? pm.TryPlaceCharacter(lane.LaneIndex, _card.CharacterData)
                 : pm.TryPlaceTrainer  (lane.LaneIndex, _card.TrainerData);
+        }
+
+        private bool TryGetLaneAtScreenPosition(Vector2 screenPosition, out Lane lane)
+        {
+            lane = null;
+            Camera cam = Camera.main;
+            if (cam == null) cam = FindAnyObjectByType<Camera>();
+            if (cam == null) return false;
+
+            Vector3 screenPt = new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(cam.transform.position.z));
+            Vector3 worldPt = cam.ScreenToWorldPoint(screenPt);
+            worldPt.z = 0f;
+
+            Collider2D[] hits = Physics2D.OverlapPointAll(worldPt);
+            if (TryExtractLane(hits, out lane))
+                return true;
+
+            // Small fallback radius helps when release happens near collider border.
+            hits = Physics2D.OverlapCircleAll(worldPt, 0.08f);
+            return TryExtractLane(hits, out lane);
+        }
+
+        private static bool TryExtractLane(Collider2D[] hits, out Lane lane)
+        {
+            lane = null;
+            if (hits == null || hits.Length == 0) return false;
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (hits[i] == null) continue;
+                Lane hitLane = hits[i].GetComponentInParent<Lane>();
+                if (hitLane == null) continue;
+                lane = hitLane;
+                return true;
+            }
+
+            return false;
         }
 
         private void HandleAnyUnitPlaced(int _, Character __)

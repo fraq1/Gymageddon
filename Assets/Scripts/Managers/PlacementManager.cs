@@ -312,12 +312,11 @@ namespace Gymageddon.Managers
         private bool TryGetLaneAtScreenPosition(Vector2 screenPosition, out Lane lane)
         {
             lane = null;
-            if (Camera.main == null) return false;
+            if (!TryGetWorldPointFromScreen(screenPosition, out Vector3 worldPoint)) return false;
 
-            Vector3 worldPoint = Camera.main.ScreenToWorldPoint(
-                new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(Camera.main.transform.position.z)));
-            worldPoint.z = 0f;
             Collider2D[] hits = Physics2D.OverlapPointAll(worldPoint);
+            if (hits == null || hits.Length == 0)
+                hits = Physics2D.OverlapCircleAll(worldPoint, 0.08f);
             if (hits == null || hits.Length == 0) return false;
 
             for (int i = 0; i < hits.Length; i++)
@@ -344,12 +343,11 @@ namespace Gymageddon.Managers
         {
             lane = null;
             selectedCollider = null;
-            if (Camera.main == null) return false;
+            if (!TryGetWorldPointFromScreen(screenPosition, out Vector3 worldPoint)) return false;
 
-            Vector3 worldPoint = Camera.main.ScreenToWorldPoint(
-                new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(Camera.main.transform.position.z)));
-            worldPoint.z = 0f;
             Collider2D[] hits = Physics2D.OverlapPointAll(worldPoint);
+            if (hits == null || hits.Length == 0)
+                hits = Physics2D.OverlapCircleAll(worldPoint, 0.08f);
             if (hits == null || hits.Length == 0) return false;
 
             selectedCollider = hits[0];
@@ -396,6 +394,19 @@ namespace Gymageddon.Managers
             if (laneIndex < 0 || laneIndex >= _lanes.Length) return false;
             lane = _lanes[laneIndex];
             return lane != null;
+        }
+
+        private static bool TryGetWorldPointFromScreen(Vector2 screenPosition, out Vector3 worldPoint)
+        {
+            worldPoint = Vector3.zero;
+            Camera cam = Camera.main;
+            if (cam == null) cam = FindAnyObjectByType<Camera>();
+            if (cam == null) return false;
+
+            worldPoint = cam.ScreenToWorldPoint(
+                new Vector3(screenPosition.x, screenPosition.y, Mathf.Abs(cam.transform.position.z)));
+            worldPoint.z = 0f;
+            return true;
         }
 
         // ── Helpers ───────────────────────────────────────────────────
