@@ -142,8 +142,7 @@ namespace Gymageddon.Managers
             if (!lane.IsCharacterSlotEmpty)
             {
                 Character existingCharacter = lane.OccupyingCharacter;
-                if (GameManager.Instance?.CurrentState == GameState.Preparing &&
-                    existingCharacter != null &&
+                if (existingCharacter != null &&
                     existingCharacter.TryEvolveWith(data))
                 {
                     Debug.Log($"[PlacementManager] {existingCharacter.CharacterName} evolved in lane {laneIndex + 1}.");
