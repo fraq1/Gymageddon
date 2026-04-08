@@ -283,8 +283,8 @@ namespace Gymageddon.Bootstrap
             var trainers = new List<TrainerData>
             {
                 MakeTrainer("Weight Rack",     TrainerEffectType.DamageBoost,      0.60f, 0f,  75,  new Color(0.36f, 0.72f, 0.36f)),
-                MakeTrainer("Treadmill",       TrainerEffectType.AttackSpeedBoost, 0.45f, 0f,  50,  new Color(0.20f, 0.70f, 0.80f)),
-                MakeTrainer("Protein Bar",     TrainerEffectType.HealthBoost,      0.50f, 0f,  60,  new Color(0.85f, 0.65f, 0.20f)),
+                MakeTrainer("Sprint Track",    TrainerEffectType.AttackSpeedBoost, 0.45f, 0f,  50,  new Color(0.20f, 0.70f, 0.80f)),
+                MakeTrainer("Recovery Mat",    TrainerEffectType.HealthBoost,      0.50f, 0f,  60,  new Color(0.85f, 0.65f, 0.20f)),
             };
 
             // ── Waves ──────────────────────────────────────────────────

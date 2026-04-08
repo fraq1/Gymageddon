@@ -19,6 +19,8 @@ namespace Gymageddon.Entities
         private bool  _blocked;
         private Character _target;
         private const float MELEE_RANGE = 0.75f;
+        private const float RETARGET_INTERVAL = 0.2f;
+        private float _retargetTimer;
 
         // ── Setup ─────────────────────────────────────────────────────
         public void Init(EnemyData data, int laneIndex, float leftBoundary)
@@ -27,6 +29,7 @@ namespace Gymageddon.Entities
             LaneIndex     = laneIndex;
             _moveSpeed    = data.moveSpeed;
             _leftBoundary = leftBoundary;
+            _retargetTimer = 0f;
 
             InitHealth(data.maxHealth);
             ApplyVisual(data.bodyColor);
@@ -36,8 +39,12 @@ namespace Gymageddon.Entities
         // ── Movement ──────────────────────────────────────────────────
         private void Update()
         {
-            if (_target == null || _target.IsDead || !IsTargetInMeleeRange(_target))
+            _retargetTimer -= Time.deltaTime;
+            if (_retargetTimer <= 0f || _target == null || _target.IsDead)
+            {
                 _target = FindNearestCharacterInLane();
+                _retargetTimer = RETARGET_INTERVAL;
+            }
 
             _blocked = _target != null && !_target.IsDead && IsTargetInMeleeRange(_target);
             if (_blocked) return;
@@ -60,7 +67,10 @@ namespace Gymageddon.Entities
 
                 // Find the character blocking this lane
                 if (_target == null || _target.IsDead || !IsTargetInMeleeRange(_target))
+                {
                     _target = FindNearestCharacterInLane();
+                    _retargetTimer = RETARGET_INTERVAL;
+                }
 
                 if (_target != null && !_target.IsDead && IsTargetInMeleeRange(_target))
                     _target.TakeDamage(Data.attackDamage);

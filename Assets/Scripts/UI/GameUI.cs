@@ -178,7 +178,7 @@ namespace Gymageddon.UI
             if (_prepDirectionsText == null) return;
             if (!_waveDirectionPreview.TryGetValue(waveNumber, out List<int> lanes) || lanes.Count == 0)
             {
-                _prepDirectionsText.text = "⚠ Направления врагов: неизвестно";
+                _prepDirectionsText.text = "⚠ Enemy directions: unknown";
                 return;
             }
 
@@ -188,7 +188,7 @@ namespace Gymageddon.UI
             for (int i = 0; i < sorted.Count; i++)
                 labels[i] = (sorted[i] + 1).ToString();
 
-            _prepDirectionsText.text = $"⚠ Направления врагов (линии): {string.Join(", ", labels)}";
+            _prepDirectionsText.text = $"⚠ Enemy approach lanes: {string.Join(", ", labels)}";
         }
 
         private void EndPreparation()
@@ -305,7 +305,7 @@ namespace Gymageddon.UI
                 new Vector2(12f, -22f), new Vector2(400f, 36f), 18, Color.white);
 
             _prepDirectionsText = CreateText("PrepDirectionsText", _preparationPanel.transform,
-                "⚠ Направления врагов: неизвестно",
+                "⚠ Enemy directions: unknown",
                 TextAnchor.MiddleLeft,
                 new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(12f, -48f), new Vector2(500f, 26f), 15,
