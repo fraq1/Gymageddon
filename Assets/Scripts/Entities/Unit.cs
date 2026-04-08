@@ -15,6 +15,8 @@ namespace Gymageddon.Entities
         private const float DAMAGE_POPUP_VERTICAL_OFFSET = 0.42f;
         private const int DAMAGE_POPUP_FONT_SIZE = 42;
         private const float DAMAGE_POPUP_CHARACTER_SIZE = 0.04f;
+        private static readonly Color DAMAGE_POPUP_ENEMY_COLOR = Color.white;
+        private static readonly Color DAMAGE_POPUP_ALLY_COLOR = new Color(1f, 0.2f, 0.2f, 1f);
         private static Font _damagePopupFont;
 
         public int MaxHealth    { get; protected set; }
@@ -115,7 +117,7 @@ namespace Gymageddon.Entities
             text.characterSize = DAMAGE_POPUP_CHARACTER_SIZE;
             text.alignment = TextAlignment.Center;
             text.anchor = TextAnchor.MiddleCenter;
-            text.color = this is Enemy ? Color.white : new Color(1f, 0.2f, 0.2f, 1f);
+            text.color = this is Enemy ? DAMAGE_POPUP_ENEMY_COLOR : DAMAGE_POPUP_ALLY_COLOR;
 
             if (_damagePopupFont == null)
                 _damagePopupFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
