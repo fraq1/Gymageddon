@@ -26,7 +26,6 @@ namespace Gymageddon.Entities
         private Vector3 _rightArmBasePos;
         private Vector3 _rightArmBaseScale;
         private bool _attackVisualInProgress;
-        private static Sprite _projectileSprite;
 
         // ── Setup ─────────────────────────────────────────────────────
         public void Init(CharacterData data)
@@ -180,7 +179,11 @@ namespace Gymageddon.Entities
             projectile.transform.localScale = new Vector3(0.14f, 0.14f, 1f);
 
             SpriteRenderer sr = projectile.AddComponent<SpriteRenderer>();
-            sr.sprite = GetProjectileSprite();
+            SpriteRenderer sourceRenderer = _rightArm != null
+                ? _rightArm.GetComponent<SpriteRenderer>()
+                : GetComponentInChildren<SpriteRenderer>();
+            sr.sprite = sourceRenderer != null ? sourceRenderer.sprite : null;
+            sr.color = new Color(1f, 0.95f, 0.6f);
             sr.sortingOrder = 5;
 
             Vector3 start = projectile.transform.position;
@@ -198,16 +201,6 @@ namespace Gymageddon.Entities
             if (projectile != null)
                 Destroy(projectile);
             _attackVisualInProgress = false;
-        }
-
-        private static Sprite GetProjectileSprite()
-        {
-            if (_projectileSprite != null) return _projectileSprite;
-            Texture2D tex = new Texture2D(1, 1);
-            tex.SetPixel(0, 0, new Color(1f, 0.95f, 0.6f));
-            tex.Apply();
-            _projectileSprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
-            return _projectileSprite;
         }
     }
 }
