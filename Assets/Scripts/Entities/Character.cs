@@ -72,7 +72,9 @@ namespace Gymageddon.Entities
         public void OnPlaced(Lane lane)
         {
             _lane     = lane;
-            _attackCooldown = 0f;
+            _attackCooldown = EffectiveAttackSpeed > 0f
+                ? 1f / EffectiveAttackSpeed
+                : float.MaxValue;
             _attackVisualInProgress = false;
         }
 

@@ -33,7 +33,9 @@ namespace Gymageddon.Entities
             _leftBoundary = leftBoundary;
             _laneY        = laneY;
             _retargetTimer = 0f;
-            _attackCooldown = 0f;
+            _attackCooldown = data != null && data.attackSpeed > 0f
+                ? 1f / data.attackSpeed
+                : float.MaxValue;
 
             InitHealth(data.maxHealth);
             ApplyVisual(data.bodyColor);
