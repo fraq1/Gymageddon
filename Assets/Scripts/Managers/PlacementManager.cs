@@ -18,8 +18,8 @@ namespace Gymageddon.Managers
         private const int BASE_MODEL_SORTING_ORDER = 2;
         private const int DETAIL_MODEL_SORTING_ORDER = 3;
         private const float REPOSITION_SELECTION_SCALE = 1.08f;
-        private const float HELD_DRAG_START_THRESHOLD_PX = 18f;
-        private const float HELD_DRAG_START_THRESHOLD_SQ = HELD_DRAG_START_THRESHOLD_PX * HELD_DRAG_START_THRESHOLD_PX;
+        private const float HELD_DRAG_START_THRESHOLD = 18f;
+        private const float HELD_DRAG_START_THRESHOLD_SQ = HELD_DRAG_START_THRESHOLD * HELD_DRAG_START_THRESHOLD;
 
         public static PlacementManager Instance { get; private set; }
 

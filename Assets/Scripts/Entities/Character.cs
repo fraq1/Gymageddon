@@ -15,6 +15,7 @@ namespace Gymageddon.Entities
         private const float RANGED_VISUAL_THRESHOLD = 3.2f;
         private const float PUNCH_VISUAL_DURATION = 0.12f;
         private const float PUNCH_VISUAL_EXTENSION_X = 0.11f;
+        private const float MIN_ATTACK_SPEED = 0.05f;
         private const float EVOLUTION_DAMAGE_MULTIPLIER = 1.9f;
         private const float EVOLUTION_SPEED_MULTIPLIER = 1.5f;
         private const float EVOLUTION_HEALTH_MULTIPLIER = 2.0f;
@@ -273,7 +274,7 @@ namespace Gymageddon.Entities
             if (Data == null) return;
             EffectiveAttackDamage = Mathf.Max(1, Mathf.RoundToInt(
                 Data.attackDamage * _evolutionDamageMultiplier * _trainerDamageMultiplier));
-            EffectiveAttackSpeed = Mathf.Max(0.05f, Data.attackSpeed * _evolutionSpeedMultiplier * _trainerSpeedMultiplier);
+            EffectiveAttackSpeed = Mathf.Max(MIN_ATTACK_SPEED, Data.attackSpeed * _evolutionSpeedMultiplier * _trainerSpeedMultiplier);
         }
 
         private void RecalculateHealthKeepingRatio()
