@@ -89,7 +89,7 @@ namespace Gymageddon.Entities
         private bool IsTargetInMeleeRange(Character character)
         {
             if (character == null) return false;
-            if (character.transform.position.x > transform.position.x) return false;
+            if (character.transform.position.x >= transform.position.x) return false;
             float dist = transform.position.x - character.transform.position.x;
             return dist <= MELEE_RANGE;
         }
