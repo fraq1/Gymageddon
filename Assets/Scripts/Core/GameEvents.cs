@@ -55,6 +55,15 @@ namespace Gymageddon.Core
 
         public static event Action OnPreparationPhaseEnded;
         public static void RaisePreparationPhaseEnded() => OnPreparationPhaseEnded?.Invoke();
+
+        // ── Wave Direction Preview ─────────────────────────────────────
+        /// <summary>
+        /// Raised before preparation starts to preview which lanes
+        /// enemies will use in the upcoming wave.
+        /// </summary>
+        public static event Action<int, List<int>> OnWaveDirectionsPreviewed; // (waveNumber, laneIndices)
+        public static void RaiseWaveDirectionsPreviewed(int waveNumber, List<int> laneIndices)
+            => OnWaveDirectionsPreviewed?.Invoke(waveNumber, laneIndices);
     }
 
     public enum GameState

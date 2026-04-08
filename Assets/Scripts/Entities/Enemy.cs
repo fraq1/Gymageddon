@@ -18,6 +18,7 @@ namespace Gymageddon.Entities
         private float _leftBoundary = -8f; // x position of player base
         private bool  _blocked;
         private Character _target;
+        private const float MELEE_RANGE = 0.75f;
 
         // ── Setup ─────────────────────────────────────────────────────
         public void Init(EnemyData data, int laneIndex, float leftBoundary)
@@ -35,6 +36,10 @@ namespace Gymageddon.Entities
         // ── Movement ──────────────────────────────────────────────────
         private void Update()
         {
+            if (_target == null || _target.IsDead || !IsTargetInMeleeRange(_target))
+                _target = FindNearestCharacterInLane();
+
+            _blocked = _target != null && !_target.IsDead && IsTargetInMeleeRange(_target);
             if (_blocked) return;
             transform.Translate(Vector3.left * _moveSpeed * Time.deltaTime);
 
@@ -54,22 +59,17 @@ namespace Gymageddon.Entities
                 yield return new WaitForSeconds(interval);
 
                 // Find the character blocking this lane
-                if (_target == null || _target.IsDead)
-                {
-                    _target  = FindBlockingCharacter();
-                    _blocked = (_target != null);
-                }
+                if (_target == null || _target.IsDead || !IsTargetInMeleeRange(_target))
+                    _target = FindNearestCharacterInLane();
 
-                if (_target != null && !_target.IsDead)
+                if (_target != null && !_target.IsDead && IsTargetInMeleeRange(_target))
                     _target.TakeDamage(Data.attackDamage);
-                else
-                    _blocked = false;
             }
         }
 
-        private Character FindBlockingCharacter()
+        private Character FindNearestCharacterInLane()
         {
-            // Look for a character in the same lane that is ahead (to the left)
+            // Look for the nearest character in the same lane that is ahead (to the left)
             Character[] all = FindObjectsByType<Character>(FindObjectsSortMode.None);
             Character nearest = null;
             float minDist = float.MaxValue;
@@ -84,6 +84,14 @@ namespace Gymageddon.Entities
                 if (dist < minDist) { minDist = dist; nearest = c; }
             }
             return nearest;
+        }
+
+        private bool IsTargetInMeleeRange(Character character)
+        {
+            if (character == null) return false;
+            if (character.transform.position.x > transform.position.x) return false;
+            float dist = transform.position.x - character.transform.position.x;
+            return dist <= MELEE_RANGE;
         }
 
         // ── Death ─────────────────────────────────────────────────────

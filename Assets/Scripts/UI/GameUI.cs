@@ -34,9 +34,12 @@ namespace Gymageddon.UI
         private GameObject _preparationPanel;
         private Text        _prepTimerText;
         private Text        _prepWaveText;
+        private Text        _prepDirectionsText;
         private Transform   _cardsContainer;
         private float       _prepTimeRemaining;
         private bool        _inPreparation;
+        private int         _currentPrepWaveNumber;
+        private readonly Dictionary<int, List<int>> _waveDirectionPreview = new Dictionary<int, List<int>>();
 
         // Canvas root (needed by CardDragHandler for ghost parenting)
         private Canvas _canvas;
@@ -83,6 +86,7 @@ namespace Gymageddon.UI
             GameEvents.OnWaveStarted            += UpdateWave;
             GameEvents.OnGameStateChanged       += HandleGameState;
             GameEvents.OnPreparationPhaseStarted += ShowPreparationPanel;
+            GameEvents.OnWaveDirectionsPreviewed += HandleWaveDirectionsPreviewed;
         }
 
         private void UnsubscribeEvents()
@@ -91,6 +95,7 @@ namespace Gymageddon.UI
             GameEvents.OnWaveStarted            -= UpdateWave;
             GameEvents.OnGameStateChanged       -= HandleGameState;
             GameEvents.OnPreparationPhaseStarted -= ShowPreparationPanel;
+            GameEvents.OnWaveDirectionsPreviewed -= HandleWaveDirectionsPreviewed;
         }
 
         // ── Event handlers ────────────────────────────────────────────
@@ -134,12 +139,14 @@ namespace Gymageddon.UI
             List<UnitCard> cards, float timeLimit)
         {
             _inPreparation     = true;
+            _currentPrepWaveNumber = waveNumber;
             _prepTimeRemaining = timeLimit;
 
             if (_prepWaveText)
                 _prepWaveText.text = $"Wave {waveNumber}/{totalWaves} — Place Your Units!";
             if (_prepTimerText)
                 _prepTimerText.text = $"⏱ {Mathf.CeilToInt(timeLimit)}s";
+            RefreshDirectionsText(waveNumber);
 
             // Rebuild card buttons
             if (_cardsContainer != null)
@@ -154,6 +161,34 @@ namespace Gymageddon.UI
             }
 
             if (_preparationPanel) _preparationPanel.SetActive(true);
+        }
+
+        private void HandleWaveDirectionsPreviewed(int waveNumber, List<int> laneIndices)
+        {
+            _waveDirectionPreview[waveNumber] = laneIndices != null
+                ? new List<int>(laneIndices)
+                : new List<int>();
+
+            if (_inPreparation && _currentPrepWaveNumber == waveNumber)
+                RefreshDirectionsText(waveNumber);
+        }
+
+        private void RefreshDirectionsText(int waveNumber)
+        {
+            if (_prepDirectionsText == null) return;
+            if (!_waveDirectionPreview.TryGetValue(waveNumber, out List<int> lanes) || lanes.Count == 0)
+            {
+                _prepDirectionsText.text = "⚠ Направления врагов: неизвестно";
+                return;
+            }
+
+            List<int> sorted = new List<int>(lanes);
+            sorted.Sort();
+            string[] labels = new string[sorted.Count];
+            for (int i = 0; i < sorted.Count; i++)
+                labels[i] = (sorted[i] + 1).ToString();
+
+            _prepDirectionsText.text = $"⚠ Направления врагов (линии): {string.Join(", ", labels)}";
         }
 
         private void EndPreparation()
@@ -269,6 +304,13 @@ namespace Gymageddon.UI
                 new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(12f, -22f), new Vector2(400f, 36f), 18, Color.white);
 
+            _prepDirectionsText = CreateText("PrepDirectionsText", _preparationPanel.transform,
+                "⚠ Направления врагов: неизвестно",
+                TextAnchor.MiddleLeft,
+                new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(12f, -48f), new Vector2(500f, 26f), 15,
+                new Color(1f, 0.75f, 0.4f));
+
             _prepTimerText = CreateText("PrepTimer", _preparationPanel.transform,
                 "⏱ 30s",
                 TextAnchor.MiddleCenter,
@@ -298,7 +340,7 @@ namespace Gymageddon.UI
             // ── Divider line ──────────────────────────────────────────
             CreatePanel("Divider", _preparationPanel.transform,
                 new Vector2(0f, 1f), new Vector2(1f, 1f),
-                new Vector2(0f, -45f), new Vector2(0f, -43f),
+                new Vector2(0f, -70f), new Vector2(0f, -68f),
                 new Color(0.4f, 0.4f, 0.4f, 0.6f));
 
             // ── Cards container (centred horizontally) ────────────────
