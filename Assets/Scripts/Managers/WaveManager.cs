@@ -38,6 +38,7 @@ namespace Gymageddon.Managers
         private int  _currentWave = -1;
         private bool _wavesStarted;
         private bool _preparationEnded;
+        private Queue<int> _pendingSpawnLanes = new Queue<int>();
 
         // ── Lifecycle ─────────────────────────────────────────────────
         private void Awake()
@@ -82,10 +83,13 @@ namespace Gymageddon.Managers
             {
                 _currentWave = i;
                 WaveData wave = _waves[i];
+                (Queue<int> spawnPlan, List<int> previewLanes) = BuildSpawnLanePlan(wave, i);
+                _pendingSpawnLanes = spawnPlan;
 
                 // ── Preparation phase: offer cards, wait for player ────
                 _preparationEnded = false;
                 List<UnitCard> cards = PickRandomCards(_cardsPerWave);
+                GameEvents.RaiseWaveDirectionsPreviewed(i + 1, previewLanes);
                 GameEvents.RaisePreparationPhaseStarted(i + 1, _waves.Count, cards, _preparationTime);
                 Debug.Log($"[WaveManager] Preparation for wave {i + 1}/{_waves.Count} — {cards.Count} cards offered");
 
@@ -114,15 +118,17 @@ namespace Gymageddon.Managers
 
                 for (int i = 0; i < group.count; i++)
                 {
-                    SpawnEnemy(group.enemyData);
+                    int lane = _pendingSpawnLanes.Count > 0
+                        ? _pendingSpawnLanes.Dequeue()
+                        : Random.Range(0, GameBoard.LANE_COUNT);
+                    SpawnEnemy(group.enemyData, lane);
                     yield return new WaitForSeconds(group.spawnInterval);
                 }
             }
         }
 
-        private void SpawnEnemy(EnemyData data)
+        private void SpawnEnemy(EnemyData data, int lane)
         {
-            int lane = Random.Range(0, GameBoard.LANE_COUNT);
             float y  = _laneYPositions[lane];
 
             GameObject go = _enemyTemplate != null
@@ -134,6 +140,52 @@ namespace Gymageddon.Managers
 
             Enemy enemy = go.AddComponent<Enemy>();
             enemy.Init(data, lane, _leftBoundary);
+        }
+
+        private (Queue<int> spawnPlan, List<int> previewLanes) BuildSpawnLanePlan(WaveData wave, int waveIndex)
+        {
+            Queue<int> spawnPlan = new Queue<int>();
+            HashSet<int> preview = new HashSet<int>();
+
+            int maxDirections = waveIndex == 0
+                ? Mathf.Min(2, GameBoard.LANE_COUNT) // first wave (zero-based index 0) uses at most 2 lanes
+                : GameBoard.LANE_COUNT;
+
+            List<int> allowedLanes = PickRandomLanes(maxDirections);
+            if (allowedLanes.Count == 0)
+                allowedLanes.Add(0);
+
+            foreach (WaveData.EnemySpawn group in wave.enemyGroups)
+            {
+                if (group.enemyData == null || group.count <= 0) continue;
+
+                for (int i = 0; i < group.count; i++)
+                {
+                    int lane = allowedLanes[Random.Range(0, allowedLanes.Count)];
+                    spawnPlan.Enqueue(lane);
+                    preview.Add(lane);
+                }
+            }
+
+            List<int> previewLanes = new List<int>(preview);
+            previewLanes.Sort();
+            return (spawnPlan, previewLanes);
+        }
+
+        private List<int> PickRandomLanes(int count)
+        {
+            List<int> allLanes = new List<int>();
+            for (int i = 0; i < GameBoard.LANE_COUNT; i++)
+                allLanes.Add(i);
+
+            for (int i = allLanes.Count - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (allLanes[i], allLanes[j]) = (allLanes[j], allLanes[i]);
+            }
+
+            int take = Mathf.Clamp(count, 0, allLanes.Count);
+            return allLanes.GetRange(0, take);
         }
 
         // ── Card picking ──────────────────────────────────────────────
@@ -175,4 +227,3 @@ namespace Gymageddon.Managers
         }
     }
 }
-

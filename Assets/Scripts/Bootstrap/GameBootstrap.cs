@@ -274,17 +274,17 @@ namespace Gymageddon.Bootstrap
             // ── Characters ─────────────────────────────────────────────
             var chars = new List<CharacterData>
             {
-                MakeCharacter("Boxer",         100, 20, 1.0f, 3f, 100, new Color(0.29f, 0.56f, 0.89f)),
-                MakeCharacter("Weightlifter",  200, 40, 0.5f, 2f, 150, new Color(0.55f, 0.27f, 0.07f)),
-                MakeCharacter("Cardio Runner", 70,  12, 1.8f, 4f, 75,  new Color(0.90f, 0.60f, 0.10f)),
+                MakeCharacter("Boxer",         220, 55, 1.2f, 3f, 100, new Color(0.29f, 0.56f, 0.89f)),
+                MakeCharacter("Weightlifter",  420, 95, 0.8f, 2f, 150, new Color(0.55f, 0.27f, 0.07f)),
+                MakeCharacter("Cardio Runner", 170, 35, 2.2f, 4f, 75,  new Color(0.90f, 0.60f, 0.10f)),
             };
 
             // ── Trainers ───────────────────────────────────────────────
             var trainers = new List<TrainerData>
             {
-                MakeTrainer("Weight Rack",     TrainerEffectType.DamageBoost,      0.30f, 0f,   75,  new Color(0.36f, 0.72f, 0.36f)),
-                MakeTrainer("Treadmill",       TrainerEffectType.EnergyRegen,      0f,    20f,  50,  new Color(0.20f, 0.70f, 0.80f)),
-                MakeTrainer("Protein Bar",     TrainerEffectType.AttackSpeedBoost, 0.25f, 0f,   60,  new Color(0.85f, 0.65f, 0.20f)),
+                MakeTrainer("Weight Rack",     TrainerEffectType.DamageBoost,      0.60f, 0f,  75,  new Color(0.36f, 0.72f, 0.36f)),
+                MakeTrainer("Sprint Track",    TrainerEffectType.AttackSpeedBoost, 0.45f, 0f,  50,  new Color(0.20f, 0.70f, 0.80f)),
+                MakeTrainer("Recovery Mat",    TrainerEffectType.HealthBoost,      0.50f, 0f,  60,  new Color(0.85f, 0.65f, 0.20f)),
             };
 
             // ── Waves ──────────────────────────────────────────────────
