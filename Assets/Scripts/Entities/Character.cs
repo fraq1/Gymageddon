@@ -44,8 +44,8 @@ namespace Gymageddon.Entities
         private float _evolutionDamageMultiplier = 1f;
         private float _evolutionSpeedMultiplier = 1f;
         private float _evolutionHealthMultiplier = 1f;
-        private static Sprite _evolutionGoldSprite;
-        private static Sprite _evolutionGoldDarkSprite;
+        private bool _hasEvolutionVisual;
+        private static Sprite _whiteSprite;
 
         // ── Setup ─────────────────────────────────────────────────────
         public void Init(CharacterData data)
@@ -59,6 +59,7 @@ namespace Gymageddon.Entities
             _evolutionDamageMultiplier = 1f;
             _evolutionSpeedMultiplier = 1f;
             _evolutionHealthMultiplier = 1f;
+            _hasEvolutionVisual = false;
             InitHealth(data.maxHealth);
             RecalculateCombatStats();
             RecalculateHealthKeepingRatio();
@@ -119,7 +120,7 @@ namespace Gymageddon.Entities
 
         public bool TryEvolveWith(CharacterData incomingData)
         {
-            if (incomingData == null || Data == null || IsEvolved) return false;
+            if (IsEvolved || incomingData == null || Data == null) return false;
             if (!string.Equals(incomingData.characterName, Data.characterName, System.StringComparison.OrdinalIgnoreCase))
                 return false;
 
@@ -287,7 +288,7 @@ namespace Gymageddon.Entities
 
         private void AddEvolutionVisual()
         {
-            if (transform.Find("EvolutionDumbbells") != null) return;
+            if (_hasEvolutionVisual || transform.Find("EvolutionDumbbells") != null) return;
 
             GameObject root = new GameObject("EvolutionDumbbells");
             root.transform.SetParent(transform, false);
@@ -295,6 +296,7 @@ namespace Gymageddon.Entities
 
             CreateDumbbell(root.transform, new Vector3(-0.18f, 0f, 0f));
             CreateDumbbell(root.transform, new Vector3(0.18f, 0f, 0f));
+            _hasEvolutionVisual = true;
         }
 
         private void CreateDumbbell(Transform parent, Vector3 localPosition)
@@ -303,12 +305,12 @@ namespace Gymageddon.Entities
             dumbbell.transform.SetParent(parent, false);
             dumbbell.transform.localPosition = localPosition;
 
-            CreateVisualPart(dumbbell.transform, "Handle", Vector3.zero, new Vector3(0.07f, 0.018f, 1f), GetEvolutionGoldDarkSprite());
-            CreateVisualPart(dumbbell.transform, "PlateL", new Vector3(-0.04f, 0f, 0f), new Vector3(0.03f, 0.04f, 1f), GetEvolutionGoldSprite());
-            CreateVisualPart(dumbbell.transform, "PlateR", new Vector3(0.04f, 0f, 0f), new Vector3(0.03f, 0.04f, 1f), GetEvolutionGoldSprite());
+            CreateVisualPart(dumbbell.transform, "Handle", Vector3.zero, new Vector3(0.07f, 0.018f, 1f), new Color(0.80f, 0.60f, 0.10f));
+            CreateVisualPart(dumbbell.transform, "PlateL", new Vector3(-0.04f, 0f, 0f), new Vector3(0.03f, 0.04f, 1f), new Color(1f, 0.84f, 0.20f));
+            CreateVisualPart(dumbbell.transform, "PlateR", new Vector3(0.04f, 0f, 0f), new Vector3(0.03f, 0.04f, 1f), new Color(1f, 0.84f, 0.20f));
         }
 
-        private void CreateVisualPart(Transform parent, string name, Vector3 localPosition, Vector3 localScale, Sprite sprite)
+        private void CreateVisualPart(Transform parent, string name, Vector3 localPosition, Vector3 localScale, Color color)
         {
             GameObject go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -316,30 +318,16 @@ namespace Gymageddon.Entities
             go.transform.localScale = localScale;
 
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = sprite;
+            sr.sprite = GetWhiteSprite();
+            sr.color = color;
             sr.sortingOrder = EVOLUTION_VISUAL_SORTING_ORDER;
         }
 
-        private static Sprite GetEvolutionGoldSprite()
+        private static Sprite GetWhiteSprite()
         {
-            if (_evolutionGoldSprite != null) return _evolutionGoldSprite;
-            _evolutionGoldSprite = CreateSolidSprite(new Color(1f, 0.84f, 0.20f));
-            return _evolutionGoldSprite;
-        }
-
-        private static Sprite GetEvolutionGoldDarkSprite()
-        {
-            if (_evolutionGoldDarkSprite != null) return _evolutionGoldDarkSprite;
-            _evolutionGoldDarkSprite = CreateSolidSprite(new Color(0.80f, 0.60f, 0.10f));
-            return _evolutionGoldDarkSprite;
-        }
-
-        private static Sprite CreateSolidSprite(Color color)
-        {
-            Texture2D tex = new Texture2D(1, 1);
-            tex.SetPixel(0, 0, color);
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
+            if (_whiteSprite != null) return _whiteSprite;
+            _whiteSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
+            return _whiteSprite;
         }
     }
 }

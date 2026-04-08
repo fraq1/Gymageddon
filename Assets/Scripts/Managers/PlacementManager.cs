@@ -19,6 +19,7 @@ namespace Gymageddon.Managers
         private const int DETAIL_MODEL_SORTING_ORDER = 3;
         private const float REPOSITION_SELECTION_SCALE = 1.08f;
         private const float HELD_DRAG_START_THRESHOLD_PX = 18f;
+        private const float HELD_DRAG_START_THRESHOLD_SQ = HELD_DRAG_START_THRESHOLD_PX * HELD_DRAG_START_THRESHOLD_PX;
 
         public static PlacementManager Instance { get; private set; }
 
@@ -260,7 +261,7 @@ namespace Gymageddon.Managers
             if (Input.GetMouseButton(0) && !_heldPlacedUnitDragActive)
             {
                 Vector2 delta = (Vector2)Input.mousePosition - _heldPlacedUnitDragStartMouse;
-                if (delta.sqrMagnitude >= HELD_DRAG_START_THRESHOLD_PX * HELD_DRAG_START_THRESHOLD_PX)
+                if (delta.sqrMagnitude >= HELD_DRAG_START_THRESHOLD_SQ)
                     _heldPlacedUnitDragActive = true;
             }
 
