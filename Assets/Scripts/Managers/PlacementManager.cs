@@ -288,6 +288,14 @@ namespace Gymageddon.Managers
             for (int i = 0; i < hits.Length; i++)
             {
                 if (hits[i].collider == null) continue;
+                Character hitCharacter = hits[i].collider.GetComponentInParent<Character>();
+                if (hitCharacter != null && TryGetLaneForCharacter(hitCharacter, out lane))
+                    return true;
+
+                Trainer hitTrainer = hits[i].collider.GetComponentInParent<Trainer>();
+                if (hitTrainer != null && TryGetLaneForTrainer(hitTrainer, out lane))
+                    return true;
+
                 Lane hitLane = hits[i].collider.GetComponentInParent<Lane>();
                 if (hitLane == null) continue;
                 lane = hitLane;
@@ -320,7 +328,36 @@ namespace Gymageddon.Managers
             }
 
             if (selectedHit.collider == null) return false;
+
+            Character selectedCharacter = selectedHit.collider.GetComponentInParent<Character>();
+            if (selectedCharacter != null && TryGetLaneForCharacter(selectedCharacter, out lane))
+                return true;
+
+            Trainer selectedTrainer = selectedHit.collider.GetComponentInParent<Trainer>();
+            if (selectedTrainer != null && TryGetLaneForTrainer(selectedTrainer, out lane))
+                return true;
+
             lane = selectedHit.collider.GetComponentInParent<Lane>();
+            return lane != null;
+        }
+
+        private bool TryGetLaneForCharacter(Character character, out Lane lane)
+        {
+            lane = null;
+            if (character == null || _lanes == null) return false;
+            int laneIndex = character.LaneIndex;
+            if (laneIndex < 0 || laneIndex >= _lanes.Length) return false;
+            lane = _lanes[laneIndex];
+            return lane != null;
+        }
+
+        private bool TryGetLaneForTrainer(Trainer trainer, out Lane lane)
+        {
+            lane = null;
+            if (trainer == null || _lanes == null) return false;
+            int laneIndex = trainer.LaneIndex;
+            if (laneIndex < 0 || laneIndex >= _lanes.Length) return false;
+            lane = _lanes[laneIndex];
             return lane != null;
         }
 
