@@ -108,8 +108,6 @@ namespace Gymageddon.Entities
         protected override void OnDied()
         {
             StopAllCoroutines();
-            if (Managers.ResourceManager.Instance != null)
-                Managers.ResourceManager.Instance.AddEnergy(Data.energyReward);
             GameEvents.RaiseEnemyKilled(this);
             Debug.Log($"[Enemy] {Data.enemyName} in lane {LaneIndex} killed.");
         }

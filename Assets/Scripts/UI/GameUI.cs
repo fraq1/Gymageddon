@@ -9,10 +9,9 @@ namespace Gymageddon.UI
 {
     /// <summary>
     /// Builds and drives all in-game UI elements at runtime:
-    ///   - Energy counter (top-left)
     ///   - Wave indicator (top-center)
-    ///   - Preparation panel (card selection + timer + Start Wave button)
-    ///   - Selection bar (bottom) — visible during Playing state for mid-wave purchases
+    ///   - Preparation panel (card selection + timer + Start Wave button + lane direction pointers)
+    ///   - Selection bar (bottom) for selecting fighters/trainers
     ///   - Game-over / victory overlay
     /// </summary>
     public class GameUI : MonoBehaviour
@@ -22,7 +21,6 @@ namespace Gymageddon.UI
         private List<TrainerData>   _trainerOptions   = new List<TrainerData>();
 
         // HUD elements
-        private Text _energyText;
         private Text _waveText;
         private Text _overlayText;
         private GameObject _overlayPanel;
@@ -40,6 +38,7 @@ namespace Gymageddon.UI
         private bool        _inPreparation;
         private int         _currentPrepWaveNumber;
         private readonly Dictionary<int, List<int>> _waveDirectionPreview = new Dictionary<int, List<int>>();
+        private readonly List<Text> _laneDirectionRows = new List<Text>();
 
         // Canvas root (needed by CardDragHandler for ghost parenting)
         private Canvas _canvas;
@@ -82,7 +81,6 @@ namespace Gymageddon.UI
         // ── Event subscriptions ───────────────────────────────────────
         private void SubscribeEvents()
         {
-            GameEvents.OnEnergyChanged          += UpdateEnergy;
             GameEvents.OnWaveStarted            += UpdateWave;
             GameEvents.OnGameStateChanged       += HandleGameState;
             GameEvents.OnPreparationPhaseStarted += ShowPreparationPanel;
@@ -91,7 +89,6 @@ namespace Gymageddon.UI
 
         private void UnsubscribeEvents()
         {
-            GameEvents.OnEnergyChanged          -= UpdateEnergy;
             GameEvents.OnWaveStarted            -= UpdateWave;
             GameEvents.OnGameStateChanged       -= HandleGameState;
             GameEvents.OnPreparationPhaseStarted -= ShowPreparationPanel;
@@ -99,11 +96,6 @@ namespace Gymageddon.UI
         }
 
         // ── Event handlers ────────────────────────────────────────────
-        private void UpdateEnergy(int amount)
-        {
-            if (_energyText) _energyText.text = $"⚡ {amount}";
-        }
-
         private void UpdateWave(int wave, int total)
         {
             if (_waveText) _waveText.text = $"Wave {wave}/{total}";
@@ -179,6 +171,7 @@ namespace Gymageddon.UI
             if (!_waveDirectionPreview.TryGetValue(waveNumber, out List<int> lanes) || lanes.Count == 0)
             {
                 _prepDirectionsText.text = "⚠ Enemy directions: unknown";
+                RefreshLaneDirectionRows(null);
                 return;
             }
 
@@ -189,6 +182,29 @@ namespace Gymageddon.UI
                 labels[i] = (sorted[i] + 1).ToString();
 
             _prepDirectionsText.text = $"⚠ Enemy approach lanes: {string.Join(", ", labels)}";
+            RefreshLaneDirectionRows(sorted);
+        }
+
+        private void RefreshLaneDirectionRows(List<int> activeLanes)
+        {
+            if (_laneDirectionRows.Count == 0) return;
+
+            HashSet<int> activeSet = activeLanes != null ? new HashSet<int>(activeLanes) : null;
+            for (int lane = 0; lane < _laneDirectionRows.Count; lane++)
+            {
+                Text row = _laneDirectionRows[lane];
+                if (row == null) continue;
+
+                bool isActive = activeSet != null && activeSet.Contains(lane);
+                row.text = isActive
+                    ? $"Lane {lane + 1}:  ◀ MONSTERS"
+                    : activeSet == null
+                        ? $"Lane {lane + 1}:  ?"
+                        : $"Lane {lane + 1}:  —";
+                row.color = isActive
+                    ? new Color(1f, 0.7f, 0.4f)
+                    : new Color(0.72f, 0.78f, 0.86f, 0.95f);
+            }
         }
 
         private void EndPreparation()
@@ -227,10 +243,6 @@ namespace Gymageddon.UI
                 new Vector2(0f, -40f), new Vector2(0f, 0f),
                 new Color(0f, 0f, 0f, 0.6f));
 
-            _energyText = CreateText("EnergyText", hud.transform, "⚡ 150",
-                TextAnchor.MiddleLeft, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(10f, 0f), new Vector2(200f, 40f), 22);
-
             _waveText = CreateText("WaveText", hud.transform, "Wave 1/3",
                 TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(0f, 0f), new Vector2(200f, 40f), 22);
@@ -250,8 +262,7 @@ namespace Gymageddon.UI
             {
                 CharacterData captured = cd;
                 CreateUnitButton(_selectionBar.transform, cd.characterName, cd.bodyColor,
-                    $"{cd.energyCost}⚡", btnX,
-                    () => PlacementManager.Instance?.SelectCharacterToPlace(captured));
+                    btnX, () => PlacementManager.Instance?.SelectCharacterToPlace(captured));
                 btnX += 90f;
             }
 
@@ -264,8 +275,7 @@ namespace Gymageddon.UI
             {
                 TrainerData captured = td;
                 CreateUnitButton(_selectionBar.transform, td.trainerName, td.bodyColor,
-                    $"{td.energyCost}⚡", btnX,
-                    () => PlacementManager.Instance?.SelectTrainerToPlace(captured));
+                    btnX, () => PlacementManager.Instance?.SelectTrainerToPlace(captured));
                 btnX += 90f;
             }
 
@@ -310,6 +320,7 @@ namespace Gymageddon.UI
                 new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(12f, -48f), new Vector2(500f, 26f), 15,
                 new Color(1f, 0.75f, 0.4f));
+            BuildLaneDirectionPanel();
 
             _prepTimerText = CreateText("PrepTimer", _preparationPanel.transform,
                 "⏱ 30s",
@@ -356,6 +367,31 @@ namespace Gymageddon.UI
             _preparationPanel.SetActive(false);
         }
 
+        private void BuildLaneDirectionPanel()
+        {
+            GameObject panel = CreatePanel("PrepLaneDirectionPanel", _preparationPanel.transform,
+                new Vector2(1f, 1f), new Vector2(1f, 1f),
+                new Vector2(-230f, -68f), new Vector2(-10f, -6f),
+                new Color(0.1f, 0.1f, 0.16f, 0.8f));
+
+            CreateText("LaneDirTitle", panel.transform, "MONSTER LANES",
+                TextAnchor.UpperCenter,
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -13f), new Vector2(200f, 22f), 13,
+                new Color(1f, 0.82f, 0.55f));
+
+            _laneDirectionRows.Clear();
+            for (int i = 0; i < GameBoard.LANE_COUNT; i++)
+            {
+                Text row = CreateText($"LaneDir_{i + 1}", panel.transform, $"Lane {i + 1}:  ?",
+                    TextAnchor.MiddleLeft,
+                    new Vector2(0f, 1f), new Vector2(0f, 1f),
+                    new Vector2(10f, -34f - i * 18f), new Vector2(200f, 16f), 12,
+                    new Color(0.72f, 0.78f, 0.86f, 0.95f));
+                _laneDirectionRows.Add(row);
+            }
+        }
+
         /// <summary>Creates a draggable card inside the cards container.</summary>
         private void CreateDraggableCard(Transform parent, UnitCard card, float xPos)
         {
@@ -384,17 +420,11 @@ namespace Gymageddon.UI
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(0f, 5f), new Vector2(95f, 36f), 12, Color.white);
 
-            // Cost
-            CreateText("Cost", go.transform, $"{card.Cost}⚡",
-                TextAnchor.LowerCenter,
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -30f), new Vector2(95f, 28f), 14, Color.yellow);
-
             // Drag hint
             CreateText("Hint", go.transform, "drag →",
                 TextAnchor.LowerCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -44f), new Vector2(95f, 18f), 9,
+                new Vector2(0f, -34f), new Vector2(95f, 18f), 9,
                 new Color(0.8f, 0.8f, 0.8f, 0.7f));
 
             // Drag handler component
@@ -443,7 +473,7 @@ namespace Gymageddon.UI
         }
 
         private void CreateUnitButton(Transform parent, string label, Color btnColor,
-            string costLabel, float xPos, System.Action onClick)
+            float xPos, System.Action onClick)
         {
             GameObject go = new GameObject($"Btn_{label}");
             go.transform.SetParent(parent, false);
@@ -458,13 +488,9 @@ namespace Gymageddon.UI
             rt.anchoredPosition = new Vector2(xPos, 0f);
             rt.sizeDelta = new Vector2(85f, 70f);
 
-            CreateText("Name", go.transform, label, TextAnchor.UpperCenter,
+            CreateText("Name", go.transform, label, TextAnchor.MiddleCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 10f), new Vector2(80f, 35f), 11, Color.white);
-
-            CreateText("Cost", go.transform, costLabel, TextAnchor.LowerCenter,
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -10f), new Vector2(80f, 25f), 13, Color.yellow);
+                new Vector2(0f, 0f), new Vector2(80f, 55f), 11, Color.white);
         }
     }
 }
