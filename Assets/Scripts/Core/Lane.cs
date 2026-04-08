@@ -85,6 +85,8 @@ namespace Gymageddon.Core
         {
             if (OccupyingCharacter != null)
             {
+                if (OccupyingTrainer != null)
+                    OccupyingTrainer.RemoveBuffFrom(OccupyingCharacter);
                 OccupyingCharacter.OnRemoved();
                 Destroy(OccupyingCharacter.gameObject);
                 OccupyingCharacter = null;
@@ -103,6 +105,56 @@ namespace Gymageddon.Core
                 Destroy(OccupyingTrainer.gameObject);
                 OccupyingTrainer = null;
             }
+        }
+
+        public Character DetachCharacterForMove()
+        {
+            if (OccupyingCharacter == null) return null;
+            Character character = OccupyingCharacter;
+            if (OccupyingTrainer != null)
+                OccupyingTrainer.RemoveBuffFrom(character);
+            character.OnRemoved();
+            character.transform.SetParent(null, true);
+            OccupyingCharacter = null;
+            return character;
+        }
+
+        public Trainer DetachTrainerForMove()
+        {
+            if (OccupyingTrainer == null) return null;
+            Trainer trainer = OccupyingTrainer;
+            if (OccupyingCharacter != null)
+                trainer.RemoveBuffFrom(OccupyingCharacter);
+            trainer.OnRemoved();
+            trainer.transform.SetParent(null, true);
+            OccupyingTrainer = null;
+            return trainer;
+        }
+
+        public bool AttachMovedCharacter(Character character)
+        {
+            if (character == null || OccupyingCharacter != null) return false;
+            OccupyingCharacter = character;
+            character.transform.SetParent(CharacterSlot, false);
+            character.transform.localPosition = Vector3.zero;
+            character.OnPlaced(this);
+            if (OccupyingTrainer != null)
+                OccupyingTrainer.ApplyBuffTo(character);
+            GameEvents.RaiseCharacterPlaced(LaneIndex, character);
+            return true;
+        }
+
+        public bool AttachMovedTrainer(Trainer trainer)
+        {
+            if (trainer == null || OccupyingTrainer != null) return false;
+            OccupyingTrainer = trainer;
+            trainer.transform.SetParent(TrainerSlot, false);
+            trainer.transform.localPosition = Vector3.zero;
+            trainer.OnPlaced(this);
+            if (OccupyingCharacter != null)
+                trainer.ApplyBuffTo(OccupyingCharacter);
+            GameEvents.RaiseTrainerPlaced(LaneIndex, trainer);
+            return true;
         }
 
         // ── Visual highlight (used by PlacementManager) ───────────────
