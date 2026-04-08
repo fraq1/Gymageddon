@@ -18,6 +18,7 @@ namespace Gymageddon.Managers
         private const int BASE_MODEL_SORTING_ORDER = 2;
         private const int DETAIL_MODEL_SORTING_ORDER = 3;
         private const float REPOSITION_SELECTION_SCALE = 1.08f;
+        private const float HELD_DRAG_START_THRESHOLD_PX = 18f;
 
         public static PlacementManager Instance { get; private set; }
 
@@ -31,6 +32,8 @@ namespace Gymageddon.Managers
         private Trainer _selectedPlacedTrainer;
         private int _selectedPlacedFromLane = -1;
         private Vector3 _selectedPlacedBaseScale = Vector3.one;
+        private bool _heldPlacedUnitDragActive;
+        private Vector2 _heldPlacedUnitDragStartMouse;
 
         // Lane Y positions and lane GameObjects (set by GameBootstrap)
         private Lane[] _lanes;
@@ -79,28 +82,13 @@ namespace Gymageddon.Managers
         {
             GameState? state = GameManager.Instance?.CurrentState;
             if (state != GameState.Playing && state != GameState.Preparing) return;
+
+            if (state == GameState.Preparing)
+                HandleHeldPlacedUnitDragInput();
+
             if (!Input.GetMouseButtonDown(0)) return;
-            if (Camera.main == null) return;
-
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit2D[] hits = Physics2D.GetRayIntersectionAll(ray);
-            if (hits == null || hits.Length == 0) return;
-
-            RaycastHit2D selectedHit = hits[0];
-            for (int i = 0; i < hits.Length; i++)
-            {
-                if (hits[i].collider != null &&
-                    (hits[i].collider.GetComponentInParent<Character>() != null ||
-                     hits[i].collider.GetComponentInParent<Trainer>() != null))
-                {
-                    selectedHit = hits[i];
-                    break;
-                }
-            }
-
-            if (selectedHit.collider == null) return;
-            Lane lane = selectedHit.collider.GetComponentInParent<Lane>();
-            if (lane == null) return;
+            if (!TryGetLaneAndHitAtScreenPosition(Input.mousePosition, out Lane lane, out RaycastHit2D selectedHit))
+                return;
 
             if (_selectedCharacter != null || _selectedTrainer != null)
             {
@@ -120,12 +108,16 @@ namespace Gymageddon.Managers
                 if (clickedCharacter != null && lane.OccupyingCharacter == clickedCharacter)
                 {
                     ArmPlacedCharacterForMove(lane, clickedCharacter);
+                    BeginHeldPlacedUnitDragCandidate();
                     return;
                 }
 
                 Trainer clickedTrainer = selectedHit.collider.GetComponentInParent<Trainer>();
                 if (clickedTrainer != null && lane.OccupyingTrainer == clickedTrainer)
+                {
                     ArmPlacedTrainerForMove(lane, clickedTrainer);
+                    BeginHeldPlacedUnitDragCandidate();
+                }
             }
         }
 
@@ -144,8 +136,21 @@ namespace Gymageddon.Managers
         /// </summary>
         public bool TryPlaceCharacter(int laneIndex, CharacterData data)
         {
-            if (!_board.CanPlaceCharacter(laneIndex))
+            Lane lane = _board.GetLane(laneIndex);
+            if (lane == null) return false;
+
+            if (!lane.IsCharacterSlotEmpty)
             {
+                Character existingCharacter = lane.OccupyingCharacter;
+                if (GameManager.Instance?.CurrentState == GameState.Preparing &&
+                    existingCharacter != null &&
+                    existingCharacter.TryEvolveWith(data))
+                {
+                    Debug.Log($"[PlacementManager] {existingCharacter.CharacterName} evolved in lane {laneIndex + 1}.");
+                    ClearSelection();
+                    return true;
+                }
+
                 Debug.Log($"[PlacementManager] Lane {laneIndex} already has a character.");
                 return false;
             }
@@ -235,6 +240,88 @@ namespace Gymageddon.Managers
             _selectedPlacedTrainer = null;
             _selectedPlacedFromLane = -1;
             _selectedPlacedBaseScale = Vector3.one;
+            _heldPlacedUnitDragActive = false;
+            _heldPlacedUnitDragStartMouse = Vector2.zero;
+        }
+
+        private void BeginHeldPlacedUnitDragCandidate()
+        {
+            _heldPlacedUnitDragActive = false;
+            _heldPlacedUnitDragStartMouse = Input.mousePosition;
+        }
+
+        private void HandleHeldPlacedUnitDragInput()
+        {
+            if (_selectedPlacedCharacter == null && _selectedPlacedTrainer == null)
+            {
+                _heldPlacedUnitDragActive = false;
+                return;
+            }
+
+            if (Input.GetMouseButton(0) && !_heldPlacedUnitDragActive)
+            {
+                Vector2 delta = (Vector2)Input.mousePosition - _heldPlacedUnitDragStartMouse;
+                if (delta.sqrMagnitude >= HELD_DRAG_START_THRESHOLD_PX * HELD_DRAG_START_THRESHOLD_PX)
+                    _heldPlacedUnitDragActive = true;
+            }
+
+            if (!Input.GetMouseButtonUp(0)) return;
+
+            if (!_heldPlacedUnitDragActive) return;
+
+            _heldPlacedUnitDragActive = false;
+            if (TryGetLaneAtScreenPosition(Input.mousePosition, out Lane lane))
+                TryRelocateSelectedToLane(lane.LaneIndex);
+            else
+                ClearMovedUnitSelection();
+        }
+
+        private bool TryGetLaneAtScreenPosition(Vector2 screenPosition, out Lane lane)
+        {
+            lane = null;
+            if (Camera.main == null) return false;
+
+            Ray ray = Camera.main.ScreenPointToRay(screenPosition);
+            RaycastHit2D[] hits = Physics2D.GetRayIntersectionAll(ray);
+            if (hits == null || hits.Length == 0) return false;
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (hits[i].collider == null) continue;
+                Lane hitLane = hits[i].collider.GetComponentInParent<Lane>();
+                if (hitLane == null) continue;
+                lane = hitLane;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetLaneAndHitAtScreenPosition(Vector2 screenPosition, out Lane lane, out RaycastHit2D selectedHit)
+        {
+            lane = null;
+            selectedHit = default;
+            if (Camera.main == null) return false;
+
+            Ray ray = Camera.main.ScreenPointToRay(screenPosition);
+            RaycastHit2D[] hits = Physics2D.GetRayIntersectionAll(ray);
+            if (hits == null || hits.Length == 0) return false;
+
+            selectedHit = hits[0];
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (hits[i].collider != null &&
+                    (hits[i].collider.GetComponentInParent<Character>() != null ||
+                     hits[i].collider.GetComponentInParent<Trainer>() != null))
+                {
+                    selectedHit = hits[i];
+                    break;
+                }
+            }
+
+            if (selectedHit.collider == null) return false;
+            lane = selectedHit.collider.GetComponentInParent<Lane>();
+            return lane != null;
         }
 
         // ── Helpers ───────────────────────────────────────────────────

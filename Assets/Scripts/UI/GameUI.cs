@@ -410,32 +410,32 @@ namespace Gymageddon.UI
             rt.anchorMin        = new Vector2(0.5f, 0.5f);
             rt.anchorMax        = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta        = new Vector2(CardWidth, 152f);
+            rt.sizeDelta        = new Vector2(CardWidth, 170f);
 
             // Type badge
             CreateText("Type", go.transform, card.TypeLabel,
                 TextAnchor.UpperCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 58f), new Vector2(138f, 24f), 11,
+                new Vector2(0f, 68f), new Vector2(138f, 22f), 11,
                 new Color(1f, 1f, 0.6f));
 
             // Unit name
             CreateText("Name", go.transform, card.Name,
                 TextAnchor.MiddleCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 40f), new Vector2(138f, 28f), 12, Color.white);
+                new Vector2(0f, 46f), new Vector2(138f, 28f), 12, Color.white);
 
             // Stats / buff details
             CreateText("Stats", go.transform, card.StatsSummary,
-                TextAnchor.MiddleCenter,
+                TextAnchor.UpperCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 14f), new Vector2(138f, 34f), 10, new Color(0.95f, 0.96f, 1f));
+                new Vector2(0f, 22f), new Vector2(138f, 38f), 10, new Color(0.95f, 0.96f, 1f));
 
             // Description
             Text desc = CreateText("Description", go.transform, card.Description,
                 TextAnchor.UpperCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -14f), new Vector2(138f, 58f), 9, new Color(0.86f, 0.9f, 0.94f));
+                new Vector2(0f, -18f), new Vector2(132f, 50f), 8, new Color(0.86f, 0.9f, 0.94f));
             desc.horizontalOverflow = HorizontalWrapMode.Wrap;
             desc.verticalOverflow = VerticalWrapMode.Truncate;
 
@@ -443,7 +443,7 @@ namespace Gymageddon.UI
             CreateText("Hint", go.transform, "drag →",
                 TextAnchor.LowerCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -62f), new Vector2(138f, 18f), 9,
+                new Vector2(0f, -74f), new Vector2(138f, 18f), 9,
                 new Color(0.8f, 0.8f, 0.8f, 0.7f));
 
             // Drag handler component
