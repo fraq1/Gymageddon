@@ -16,6 +16,9 @@ namespace Gymageddon.Managers
     public class PlacementManager : MonoBehaviour
     {
         private const float OUTLINE_SCALE_MULTIPLIER = 1.18f;
+        private const int OUTLINE_SORTING_ORDER = 1;
+        private const int UNIT_SORTING_ORDER = 2;
+        private const int BADGE_SORTING_ORDER = 3;
 
         public static PlacementManager Instance { get; private set; }
 
@@ -152,13 +155,13 @@ namespace Gymageddon.Managers
             Color badgeColor, Color outlineColor)
         {
             GameObject go = new GameObject("Unit");
-            CreateOutline(go.transform, outlineColor, scale * OUTLINE_SCALE_MULTIPLIER, 1);
+            CreateOutline(go.transform, outlineColor, scale * OUTLINE_SCALE_MULTIPLIER, OUTLINE_SORTING_ORDER);
 
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = CreateColoredSprite(color);
-            sr.sortingOrder = 2;
+            sr.sortingOrder = UNIT_SORTING_ORDER;
             go.transform.localScale = scale;
-            CreateBadge(go.transform, badge, badgeColor, 3);
+            CreateBadge(go.transform, badge, badgeColor, BADGE_SORTING_ORDER);
             // Add a collider so raycasting works
             go.AddComponent<BoxCollider2D>();
             return go;

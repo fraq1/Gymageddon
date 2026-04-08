@@ -241,7 +241,7 @@ namespace Gymageddon.Managers
             GameObject badge = new GameObject("EnemyBadge");
             badge.transform.SetParent(parent, false);
             badge.transform.localPosition = new Vector3(0f, 0f, -0.1f);
-            badge.transform.localRotation = Quaternion.Euler(0f, 0f, -45f);
+            badge.transform.localRotation = Quaternion.Euler(0f, 0f, -ENEMY_ROTATION_DEGREES);
             badge.transform.localScale = Vector3.one * 0.16f;
 
             TextMesh tm = badge.AddComponent<TextMesh>();
