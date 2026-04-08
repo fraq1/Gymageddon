@@ -75,6 +75,7 @@ namespace Gymageddon.Core
         public void EndPreparationPhase()
         {
             if (CurrentState != GameState.Preparing) return;
+            Placement?.ClearSelection();
             SetState(GameState.Playing);
             GameEvents.RaisePreparationPhaseEnded();
         }

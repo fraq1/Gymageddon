@@ -109,9 +109,9 @@ namespace Gymageddon.UI
             switch (state)
             {
                 case GameState.Playing:
-                    // Hide preparation, show selection bar for mid-wave purchases
+                    // Hide preparation and keep bottom purchase bar disabled.
                     if (_preparationPanel) _preparationPanel.SetActive(false);
-                    if (_selectionBar)     _selectionBar.SetActive(true);
+                    if (_selectionBar)     _selectionBar.SetActive(false);
                     break;
 
                 case GameState.Preparing:
@@ -426,4 +426,3 @@ namespace Gymageddon.UI
         }
     }
 }
-

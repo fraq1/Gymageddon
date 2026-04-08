@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Gymageddon.Core;
 using Gymageddon.Data;
+using Gymageddon.Entities;
 using Gymageddon.Managers;
 
 namespace Gymageddon.UI
@@ -13,7 +14,7 @@ namespace Gymageddon.UI
     /// and on release the unit is placed on whichever lane is under the cursor.
     /// </summary>
     public class CardDragHandler : MonoBehaviour,
-        IBeginDragHandler, IDragHandler, IEndDragHandler
+        IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
     {
         private UnitCard    _card;
         private Transform   _canvasRoot;
@@ -21,6 +22,9 @@ namespace Gymageddon.UI
         private GameObject  _ghost;
         private bool        _placed;
         private Camera      _camera;
+        private bool        _armedForClickPlacement;
+        private Vector3     _baseScale = Vector3.one;
+        private static CardDragHandler _armedCard;
 
         /// <summary>Must be called right after the GO is created.</summary>
         public void Init(UnitCard card, Transform canvasRoot)
@@ -35,6 +39,17 @@ namespace Gymageddon.UI
             if (_canvasGroup == null)
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
             _camera = Camera.main;
+            _baseScale = transform.localScale;
+
+            GameEvents.OnCharacterPlaced += HandleAnyUnitPlaced;
+            GameEvents.OnTrainerPlaced += HandleAnyTrainerPlaced;
+        }
+
+        private void OnDestroy()
+        {
+            GameEvents.OnCharacterPlaced -= HandleAnyUnitPlaced;
+            GameEvents.OnTrainerPlaced -= HandleAnyTrainerPlaced;
+            if (_armedCard == this) _armedCard = null;
         }
 
         // ── Drag events ───────────────────────────────────────────────
@@ -103,9 +118,28 @@ namespace Gymageddon.UI
                 if (lane != null && TryPlaceOnLane(lane))
                 {
                     _placed = true;
+                    if (_armedCard == this) _armedCard = null;
+                    SetArmed(false);
                     gameObject.SetActive(false); // consume card
                 }
             }
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (GameManager.Instance?.CurrentState != GameState.Preparing) return;
+
+            PlacementManager pm = PlacementManager.Instance;
+            if (pm == null) return;
+
+            if (_armedCard != null && _armedCard != this)
+                _armedCard.SetArmed(false);
+
+            _armedCard = this;
+            SetArmed(true);
+
+            if (_card.IsCharacter) pm.SelectCharacterToPlace(_card.CharacterData);
+            else pm.SelectTrainerToPlace(_card.TrainerData);
         }
 
         // ── Helpers ───────────────────────────────────────────────────
@@ -117,6 +151,31 @@ namespace Gymageddon.UI
             return _card.IsCharacter
                 ? pm.TryPlaceCharacter(lane.LaneIndex, _card.CharacterData)
                 : pm.TryPlaceTrainer  (lane.LaneIndex, _card.TrainerData);
+        }
+
+        private void HandleAnyUnitPlaced(int _, Character __)
+        {
+            ConsumeIfArmed();
+        }
+
+        private void HandleAnyTrainerPlaced(int _, Trainer __)
+        {
+            ConsumeIfArmed();
+        }
+
+        private void ConsumeIfArmed()
+        {
+            if (!_armedForClickPlacement || !gameObject.activeSelf) return;
+            SetArmed(false);
+            if (_armedCard == this) _armedCard = null;
+            gameObject.SetActive(false);
+        }
+
+        private void SetArmed(bool armed)
+        {
+            _armedForClickPlacement = armed;
+            transform.localScale = armed ? _baseScale * 1.08f : _baseScale;
+            _canvasGroup.alpha = armed ? 1f : 0.95f;
         }
     }
 }
