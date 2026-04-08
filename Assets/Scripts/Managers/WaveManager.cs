@@ -197,12 +197,15 @@ namespace Gymageddon.Managers
             foreach (TrainerData   t in _trainerPool)   trainerCards.Add(new UnitCard(t));
 
             List<UnitCard> result = new List<UnitCard>();
-            int remainingSlots = Mathf.Max(1, count);
+            int requestedCount = Mathf.Max(1, count);
+            int remainingSlots = requestedCount;
 
             int minimumCharacterCards = Mathf.Max(1, Mathf.CeilToInt(remainingSlots * 0.5f));
-            int guaranteedCharacters = characterCards.Count > 0 && trainerCards.Count > 0
-                ? Mathf.Min(characterCards.Count, minimumCharacterCards)
-                : 0;
+            int guaranteedCharacters = 0;
+            if (characterCards.Count > 0 && trainerCards.Count > 0)
+                guaranteedCharacters = Mathf.Min(characterCards.Count, minimumCharacterCards);
+            else if (characterCards.Count > 0)
+                guaranteedCharacters = Mathf.Min(characterCards.Count, remainingSlots);
 
             TakeRandomCards(characterCards, guaranteedCharacters, result);
             remainingSlots -= result.Count;
@@ -210,13 +213,14 @@ namespace Gymageddon.Managers
             if (remainingSlots > 0)
                 TakeRandomCards(trainerCards, Mathf.Min(remainingSlots, trainerCards.Count), result);
 
-            int additionalNeeded = Mathf.Max(0, count - result.Count);
+            int additionalNeeded = Mathf.Max(0, requestedCount - result.Count);
             if (additionalNeeded > 0)
             {
-                List<UnitCard> remaining = new List<UnitCard>();
-                remaining.AddRange(characterCards);
-                remaining.AddRange(trainerCards);
-                TakeRandomCards(remaining, Mathf.Min(additionalNeeded, remaining.Count), result);
+                // characterCards/trainerCards currently contain only leftovers that were not picked above.
+                List<UnitCard> remainingCards = new List<UnitCard>();
+                remainingCards.AddRange(characterCards);
+                remainingCards.AddRange(trainerCards);
+                TakeRandomCards(remainingCards, Mathf.Min(additionalNeeded, remainingCards.Count), result);
             }
 
             return result;
