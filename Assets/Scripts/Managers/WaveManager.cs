@@ -22,7 +22,6 @@ namespace Gymageddon.Managers
         [Header("Spawn")]
         [SerializeField] private float _spawnX = 9f;
         [SerializeField] private float _leftBoundary = -8f;
-        [SerializeField] private float _lanePaddingForDiagonal = 0.15f;
 
         [Header("Preparation Phase")]
         [SerializeField] private float _preparationTime = 30f; // seconds to place units before wave
@@ -30,7 +29,6 @@ namespace Gymageddon.Managers
 
         // Lane Y positions — set by GameBootstrap
         private float[] _laneYPositions = new float[GameBoard.LANE_COUNT];
-        private float _laneHalfHeight = 0.75f;
 
         // Card pool — set by GameBootstrap
         private List<CharacterData> _characterPool = new List<CharacterData>();
@@ -58,16 +56,7 @@ namespace Gymageddon.Managers
         private void OnPreparationEnded() => _preparationEnded = true;
 
         // ── Injection ─────────────────────────────────────────────────
-        public void SetLaneYPositions(float[] positions)
-        {
-            _laneYPositions = positions;
-
-            if (positions != null && positions.Length >= 2)
-            {
-                float laneSpacing = Mathf.Abs(positions[0] - positions[1]);
-                _laneHalfHeight = Mathf.Max(0.1f, laneSpacing * 0.5f - _lanePaddingForDiagonal);
-            }
-        }
+        public void SetLaneYPositions(float[] positions) => _laneYPositions = positions;
         public void SetEnemyTemplate(GameObject template) => _enemyTemplate = template;
         public void AddWave(WaveData wave) => _waves.Add(wave);
 
@@ -152,7 +141,7 @@ namespace Gymageddon.Managers
             go.transform.position = new Vector3(_spawnX, y, 0f);
 
             Enemy enemy = go.AddComponent<Enemy>();
-            enemy.Init(data, lane, _leftBoundary, y, _laneHalfHeight);
+            enemy.Init(data, lane, _leftBoundary);
         }
 
         private (Queue<int> spawnPlan, List<int> previewLanes) BuildSpawnLanePlan(WaveData wave, int waveIndex)

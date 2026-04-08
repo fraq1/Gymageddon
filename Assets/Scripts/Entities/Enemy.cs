@@ -13,33 +13,23 @@ namespace Gymageddon.Entities
     {
         private const float MELEE_RANGE = 0.75f;
         private const float RETARGET_INTERVAL = 0.2f;
-        private const float DIAGONAL_VERTICAL_FACTOR = 0.55f;
-        private static bool _nextDiagonalUp;
 
         public EnemyData Data        { get; private set; }
         public int       LaneIndex   { get; private set; }
 
         private float _moveSpeed;
         private float _leftBoundary = -8f; // x position of player base
-        private float _laneCenterY;
-        private float _laneHalfHeight;
-        private Vector3 _moveDirection;
         private bool  _blocked;
         private Character _target;
         private float _retargetTimer;
 
         // ── Setup ─────────────────────────────────────────────────────
-        public void Init(EnemyData data, int laneIndex, float leftBoundary, float laneCenterY, float laneHalfHeight)
+        public void Init(EnemyData data, int laneIndex, float leftBoundary)
         {
             Data          = data;
             LaneIndex     = laneIndex;
             _moveSpeed    = data.moveSpeed;
             _leftBoundary = leftBoundary;
-            _laneCenterY  = laneCenterY;
-            _laneHalfHeight = Mathf.Max(0.1f, laneHalfHeight);
-            _nextDiagonalUp = !_nextDiagonalUp;
-            float verticalSign = _nextDiagonalUp ? 1f : -1f;
-            _moveDirection = new Vector3(-1f, verticalSign * DIAGONAL_VERTICAL_FACTOR, 0f).normalized;
             _retargetTimer = 0f;
 
             InitHealth(data.maxHealth);
@@ -59,8 +49,7 @@ namespace Gymageddon.Entities
 
             _blocked = _target != null && !_target.IsDead && IsTargetInMeleeRange(_target);
             if (_blocked) return;
-            transform.position += _moveDirection * _moveSpeed * Time.deltaTime;
-            KeepInsideLaneBounds();
+            transform.Translate(Vector3.left * _moveSpeed * Time.deltaTime);
 
             if (transform.position.x <= _leftBoundary)
             {
@@ -102,7 +91,7 @@ namespace Gymageddon.Entities
                 if (lane == null || lane.LaneIndex != LaneIndex) continue;
                 if (c.transform.position.x > transform.position.x) continue; // skip those behind the enemy
 
-                float dist = Vector2.Distance(transform.position, c.transform.position);
+                float dist = transform.position.x - c.transform.position.x;
                 if (dist < minDist) { minDist = dist; nearest = c; }
             }
             return nearest;
@@ -112,28 +101,8 @@ namespace Gymageddon.Entities
         {
             if (character == null) return false;
             if (character.transform.position.x >= transform.position.x) return false;
-            float dist = Vector2.Distance(transform.position, character.transform.position);
+            float dist = transform.position.x - character.transform.position.x;
             return dist <= MELEE_RANGE;
-        }
-
-        private void KeepInsideLaneBounds()
-        {
-            float minY = _laneCenterY - _laneHalfHeight;
-            float maxY = _laneCenterY + _laneHalfHeight;
-            Vector3 pos = transform.position;
-
-            if (pos.y < minY)
-            {
-                pos.y = minY;
-                _moveDirection = new Vector3(_moveDirection.x, Mathf.Abs(_moveDirection.y), 0f);
-            }
-            else if (pos.y > maxY)
-            {
-                pos.y = maxY;
-                _moveDirection = new Vector3(_moveDirection.x, -Mathf.Abs(_moveDirection.y), 0f);
-            }
-
-            transform.position = pos;
         }
 
         // ── Death ─────────────────────────────────────────────────────
