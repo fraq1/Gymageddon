@@ -278,9 +278,9 @@ namespace Gymageddon.Bootstrap
                 MakeCharacter("Weightlifter",  420, 70, 0.8f, 2f, 150, new Color(0.55f, 0.27f, 0.07f)),
                 MakeCharacter("Cardio Runner", 170, 24, 2.2f, 4f, 75,  new Color(0.90f, 0.60f, 0.10f)),
             };
-            chars[0].description = "Мощные удары на средней дистанции.";
-            chars[1].description = "Медленный, но очень живучий тяжеловес.";
-            chars[2].description = "Быстрые атаки и самый дальний радиус.";
+            chars[0].description = "Strong puncher with solid mid-range pressure.";
+            chars[1].description = "Slow, tough heavyweight with high durability.";
+            chars[2].description = "Fast striker with the longest attack range.";
 
             // ── Trainers ───────────────────────────────────────────────
             var trainers = new List<TrainerData>
@@ -289,9 +289,9 @@ namespace Gymageddon.Bootstrap
                 MakeTrainer("Sprint Track",    TrainerEffectType.AttackSpeedBoost, 0.45f, 0f,  50,  new Color(0.20f, 0.70f, 0.80f)),
                 MakeTrainer("Recovery Mat",    TrainerEffectType.HealthBoost,      0.50f, 0f,  60,  new Color(0.85f, 0.65f, 0.20f)),
             };
-            trainers[0].description = "Усиливает урон бойца на линии.";
-            trainers[1].description = "Ускоряет атаки бойца на линии.";
-            trainers[2].description = "Повышает максимум здоровья бойца на линии.";
+            trainers[0].description = "Boosts fighter damage in the same lane.";
+            trainers[1].description = "Increases fighter attack speed in the same lane.";
+            trainers[2].description = "Raises fighter max health in the same lane.";
 
             // ── Waves ──────────────────────────────────────────────────
             EnemyData couchPotato = MakeEnemy("Couch Potato",  95,  10, 0.5f, 0.8f, 25, new Color(0.85f, 0.33f, 0.31f));

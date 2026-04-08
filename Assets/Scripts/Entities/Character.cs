@@ -11,6 +11,8 @@ namespace Gymageddon.Entities
     /// </summary>
     public class Character : Unit
     {
+        private const float RANGED_VISUAL_THRESHOLD = 3.2f;
+
         // Loaded from CharacterData
         public CharacterData Data { get; private set; }
         public string CharacterName => Data ? Data.characterName : "Unknown";
@@ -128,7 +130,7 @@ namespace Gymageddon.Entities
         private void PlayAttackVisual(Vector3 targetPosition)
         {
             if (_attackVisualInProgress) return;
-            if (AttackRange >= 3.2f)
+            if (AttackRange >= RANGED_VISUAL_THRESHOLD)
                 StartCoroutine(ThrowVisualRoutine(targetPosition));
             else
                 StartCoroutine(PunchVisualRoutine());
