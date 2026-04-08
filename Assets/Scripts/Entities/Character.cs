@@ -15,6 +15,11 @@ namespace Gymageddon.Entities
         private const float RANGED_VISUAL_THRESHOLD = 3.2f;
         private const float PUNCH_VISUAL_DURATION = 0.12f;
         private const float PUNCH_VISUAL_EXTENSION_X = 0.11f;
+        private const float MIN_ATTACK_SPEED = 0.05f;
+        private const float EVOLUTION_DAMAGE_MULTIPLIER = 1.9f;
+        private const float EVOLUTION_SPEED_MULTIPLIER = 1.5f;
+        private const float EVOLUTION_HEALTH_MULTIPLIER = 2.0f;
+        private const int EVOLUTION_VISUAL_SORTING_ORDER = 4;
         private static readonly Vector3 PROJECTILE_SPAWN_OFFSET = new Vector3(0.25f, 0.12f, 0f);
         private static readonly Vector3 PROJECTILE_SCALE = new Vector3(0.14f, 0.14f, 1f);
 
@@ -26,6 +31,7 @@ namespace Gymageddon.Entities
         public int   EffectiveAttackDamage { get; private set; }
         public float EffectiveAttackSpeed  { get; private set; }
         public float AttackRange           { get; private set; }
+        public bool IsEvolved { get; private set; }
 
         private Lane   _lane;
         private bool   _attacking;
@@ -33,15 +39,31 @@ namespace Gymageddon.Entities
         private Vector3 _rightArmBasePos;
         private Vector3 _rightArmBaseScale;
         private bool _attackVisualInProgress;
+        private float _trainerDamageMultiplier = 1f;
+        private float _trainerSpeedMultiplier = 1f;
+        private float _trainerHealthMultiplier = 1f;
+        private float _evolutionDamageMultiplier = 1f;
+        private float _evolutionSpeedMultiplier = 1f;
+        private float _evolutionHealthMultiplier = 1f;
+        private bool _hasEvolutionVisual;
+        private static Sprite _whiteSprite;
 
         // ── Setup ─────────────────────────────────────────────────────
         public void Init(CharacterData data)
         {
             Data                   = data;
-            EffectiveAttackDamage  = data.attackDamage;
-            EffectiveAttackSpeed   = data.attackSpeed;
             AttackRange            = data.attackRange;
+            IsEvolved              = false;
+            _trainerDamageMultiplier = 1f;
+            _trainerSpeedMultiplier = 1f;
+            _trainerHealthMultiplier = 1f;
+            _evolutionDamageMultiplier = 1f;
+            _evolutionSpeedMultiplier = 1f;
+            _evolutionHealthMultiplier = 1f;
+            _hasEvolutionVisual = false;
             InitHealth(data.maxHealth);
+            RecalculateCombatStats();
+            RecalculateHealthKeepingRatio();
             ApplyVisual(data.bodyColor);
             CacheModelParts();
         }
@@ -61,20 +83,57 @@ namespace Gymageddon.Entities
         }
 
         // ── Trainer buffs ─────────────────────────────────────────────
-        public void ApplyDamageBoost(float multiplier)   => EffectiveAttackDamage = Mathf.RoundToInt(Data.attackDamage * (1f + multiplier));
-        public void ApplySpeedBoost(float multiplier)    => EffectiveAttackSpeed  = Data.attackSpeed * (1f + multiplier);
-        public void ApplyHealthBoost(float multiplier)
+        public void ApplyDamageBoost(float multiplier)
         {
-            int oldMax = MaxHealth;
-            MaxHealth = Mathf.RoundToInt(Data.maxHealth * (1f + multiplier));
-            // Preserve the current health percentage so placement mid-combat doesn't fully heal.
-            CurrentHealth = Mathf.Clamp(
-                Mathf.RoundToInt((float)CurrentHealth / oldMax * MaxHealth), 0, MaxHealth);
+            _trainerDamageMultiplier = 1f + multiplier;
+            RecalculateCombatStats();
         }
 
-        public void RemoveDamageBoost()  => EffectiveAttackDamage = Data.attackDamage;
-        public void RemoveSpeedBoost()   => EffectiveAttackSpeed  = Data.attackSpeed;
-        public void RemoveHealthBoost()  { MaxHealth = Data.maxHealth; CurrentHealth = Mathf.Min(CurrentHealth, MaxHealth); }
+        public void ApplySpeedBoost(float multiplier)
+        {
+            _trainerSpeedMultiplier = 1f + multiplier;
+            RecalculateCombatStats();
+        }
+
+        public void ApplyHealthBoost(float multiplier)
+        {
+            _trainerHealthMultiplier = 1f + multiplier;
+            RecalculateHealthKeepingRatio();
+        }
+
+        public void RemoveDamageBoost()
+        {
+            _trainerDamageMultiplier = 1f;
+            RecalculateCombatStats();
+        }
+
+        public void RemoveSpeedBoost()
+        {
+            _trainerSpeedMultiplier = 1f;
+            RecalculateCombatStats();
+        }
+
+        public void RemoveHealthBoost()
+        {
+            _trainerHealthMultiplier = 1f;
+            RecalculateHealthKeepingRatio();
+        }
+
+        public bool TryEvolveWith(CharacterData incomingData)
+        {
+            if (IsEvolved || incomingData == null || Data == null) return false;
+            if (!string.Equals(incomingData.characterName, Data.characterName, System.StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            IsEvolved = true;
+            _evolutionDamageMultiplier = EVOLUTION_DAMAGE_MULTIPLIER;
+            _evolutionSpeedMultiplier = EVOLUTION_SPEED_MULTIPLIER;
+            _evolutionHealthMultiplier = EVOLUTION_HEALTH_MULTIPLIER;
+            RecalculateCombatStats();
+            RecalculateHealthKeepingRatio();
+            AddEvolutionVisual();
+            return true;
+        }
 
         // ── Combat loop ───────────────────────────────────────────────
         private IEnumerator AttackRoutine()
@@ -208,6 +267,68 @@ namespace Gymageddon.Entities
             if (projectile != null)
                 Destroy(projectile);
             _attackVisualInProgress = false;
+        }
+
+        private void RecalculateCombatStats()
+        {
+            if (Data == null) return;
+            EffectiveAttackDamage = Mathf.Max(1, Mathf.RoundToInt(
+                Data.attackDamage * _evolutionDamageMultiplier * _trainerDamageMultiplier));
+            EffectiveAttackSpeed = Mathf.Max(MIN_ATTACK_SPEED, Data.attackSpeed * _evolutionSpeedMultiplier * _trainerSpeedMultiplier);
+        }
+
+        private void RecalculateHealthKeepingRatio()
+        {
+            if (Data == null) return;
+            int oldMax = Mathf.Max(MaxHealth, 1);
+            float ratio = Mathf.Clamp01((float)CurrentHealth / oldMax);
+            MaxHealth = Mathf.Max(1, Mathf.RoundToInt(
+                Data.maxHealth * _evolutionHealthMultiplier * _trainerHealthMultiplier));
+            CurrentHealth = Mathf.Clamp(Mathf.RoundToInt(ratio * MaxHealth), 0, MaxHealth);
+        }
+
+        private void AddEvolutionVisual()
+        {
+            if (_hasEvolutionVisual || transform.Find("EvolutionDumbbells") != null) return;
+
+            GameObject root = new GameObject("EvolutionDumbbells");
+            root.transform.SetParent(transform, false);
+            root.transform.localPosition = new Vector3(0f, 0.44f, -0.02f);
+
+            CreateDumbbell(root.transform, new Vector3(-0.18f, 0f, 0f));
+            CreateDumbbell(root.transform, new Vector3(0.18f, 0f, 0f));
+            _hasEvolutionVisual = true;
+        }
+
+        private void CreateDumbbell(Transform parent, Vector3 localPosition)
+        {
+            GameObject dumbbell = new GameObject("Dumbbell");
+            dumbbell.transform.SetParent(parent, false);
+            dumbbell.transform.localPosition = localPosition;
+
+            CreateVisualPart(dumbbell.transform, "Handle", Vector3.zero, new Vector3(0.07f, 0.018f, 1f), new Color(0.80f, 0.60f, 0.10f));
+            CreateVisualPart(dumbbell.transform, "PlateL", new Vector3(-0.04f, 0f, 0f), new Vector3(0.03f, 0.04f, 1f), new Color(1f, 0.84f, 0.20f));
+            CreateVisualPart(dumbbell.transform, "PlateR", new Vector3(0.04f, 0f, 0f), new Vector3(0.03f, 0.04f, 1f), new Color(1f, 0.84f, 0.20f));
+        }
+
+        private void CreateVisualPart(Transform parent, string name, Vector3 localPosition, Vector3 localScale, Color color)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPosition;
+            go.transform.localScale = localScale;
+
+            SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = GetWhiteSprite();
+            sr.color = color;
+            sr.sortingOrder = EVOLUTION_VISUAL_SORTING_ORDER;
+        }
+
+        private static Sprite GetWhiteSprite()
+        {
+            if (_whiteSprite != null) return _whiteSprite;
+            _whiteSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
+            return _whiteSprite;
         }
     }
 }
