@@ -19,17 +19,19 @@ namespace Gymageddon.Entities
 
         private float _moveSpeed;
         private float _leftBoundary = -8f; // x position of player base
+        private float _laneY;
         private bool  _blocked;
         private Character _target;
         private float _retargetTimer;
 
         // ── Setup ─────────────────────────────────────────────────────
-        public void Init(EnemyData data, int laneIndex, float leftBoundary)
+        public void Init(EnemyData data, int laneIndex, float leftBoundary, float laneY)
         {
             Data          = data;
             LaneIndex     = laneIndex;
             _moveSpeed    = data.moveSpeed;
             _leftBoundary = leftBoundary;
+            _laneY        = laneY;
             _retargetTimer = 0f;
 
             InitHealth(data.maxHealth);
@@ -49,9 +51,12 @@ namespace Gymageddon.Entities
 
             _blocked = _target != null && !_target.IsDead && IsTargetInMeleeRange(_target);
             if (_blocked) return;
-            transform.Translate(Vector3.left * _moveSpeed * Time.deltaTime);
+            Vector3 position = transform.position;
+            position.x -= _moveSpeed * Time.deltaTime;
+            position.y = _laneY;
+            transform.position = position;
 
-            if (transform.position.x <= _leftBoundary)
+            if (position.x <= _leftBoundary)
             {
                 GameEvents.RaiseEnemyReachedBase(LaneIndex);
                 Destroy(gameObject);

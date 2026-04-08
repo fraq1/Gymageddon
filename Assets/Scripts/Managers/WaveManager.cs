@@ -14,8 +14,6 @@ namespace Gymageddon.Managers
     /// </summary>
     public class WaveManager : MonoBehaviour
     {
-        private const float ENEMY_ROTATION_DEGREES = 45f;
-
         [Header("Waves")]
         [SerializeField] private List<WaveData> _waves = new List<WaveData>();
 
@@ -141,7 +139,7 @@ namespace Gymageddon.Managers
             go.transform.position = new Vector3(_spawnX, y, 0f);
 
             Enemy enemy = go.AddComponent<Enemy>();
-            enemy.Init(data, lane, _leftBoundary);
+            enemy.Init(data, lane, _leftBoundary, y);
         }
 
         private (Queue<int> spawnPlan, List<int> previewLanes) BuildSpawnLanePlan(WaveData wave, int waveIndex)
@@ -218,8 +216,9 @@ namespace Gymageddon.Managers
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = CreateColoredSprite(color);
             sr.sortingOrder = 2;
-            go.transform.rotation = Quaternion.Euler(0f, 0f, ENEMY_ROTATION_DEGREES);
-            go.transform.localScale = new Vector3(0.7f, 0.7f, 1f);
+            go.transform.rotation = Quaternion.identity;
+            go.transform.localScale = new Vector3(0.72f, 0.72f, 1f);
+            CreateEnemyFace(go.transform);
             CreateEnemyBadge(go.transform, $"M{lane + 1}");
             return go;
         }
@@ -236,13 +235,34 @@ namespace Gymageddon.Managers
             sr.sortingOrder = 1;
         }
 
+        private void CreateEnemyFace(Transform parent)
+        {
+            CreateFacePart(parent, "LeftEye", new Vector3(-0.22f, 0.12f, -0.05f), new Vector3(0.18f, 0.18f, 1f), Color.white, 3);
+            CreateFacePart(parent, "RightEye", new Vector3(0.22f, 0.12f, -0.05f), new Vector3(0.18f, 0.18f, 1f), Color.white, 3);
+            CreateFacePart(parent, "LeftPupil", new Vector3(-0.22f, 0.12f, -0.08f), new Vector3(0.08f, 0.08f, 1f), Color.black, 4);
+            CreateFacePart(parent, "RightPupil", new Vector3(0.22f, 0.12f, -0.08f), new Vector3(0.08f, 0.08f, 1f), Color.black, 4);
+            CreateFacePart(parent, "Mouth", new Vector3(0f, -0.2f, -0.05f), new Vector3(0.42f, 0.10f, 1f), new Color(0.35f, 0f, 0f, 0.95f), 3);
+        }
+
+        private void CreateFacePart(Transform parent, string name, Vector3 localPosition, Vector3 localScale, Color color, int sortingOrder)
+        {
+            GameObject part = new GameObject(name);
+            part.transform.SetParent(parent, false);
+            part.transform.localPosition = localPosition;
+            part.transform.localScale = localScale;
+
+            SpriteRenderer sr = part.AddComponent<SpriteRenderer>();
+            sr.sprite = CreateColoredSprite(color);
+            sr.sortingOrder = sortingOrder;
+        }
+
         private void CreateEnemyBadge(Transform parent, string text)
         {
             GameObject badge = new GameObject("EnemyBadge");
             badge.transform.SetParent(parent, false);
-            badge.transform.localPosition = new Vector3(0f, 0f, -0.1f);
-            badge.transform.localRotation = Quaternion.Euler(0f, 0f, -ENEMY_ROTATION_DEGREES);
-            badge.transform.localScale = Vector3.one * 0.16f;
+            badge.transform.localPosition = new Vector3(0f, 0.36f, -0.1f);
+            badge.transform.localRotation = Quaternion.identity;
+            badge.transform.localScale = Vector3.one * 0.12f;
 
             TextMesh tm = badge.AddComponent<TextMesh>();
             tm.text = text;
