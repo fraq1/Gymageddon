@@ -148,7 +148,7 @@ namespace Gymageddon.Managers
             HashSet<int> preview = new HashSet<int>();
 
             int maxDirections = waveIndex == 0
-                ? Mathf.Min(2, GameBoard.LANE_COUNT) // wave 1 uses at most 2 lanes
+                ? Mathf.Min(2, GameBoard.LANE_COUNT) // first wave (zero-based index 0) uses at most 2 lanes
                 : GameBoard.LANE_COUNT;
 
             List<int> allowedLanes = PickRandomLanes(maxDirections);
