@@ -26,6 +26,10 @@ namespace Gymageddon.Managers
         // Currently selected data (only one can be "held" at a time)
         private CharacterData _selectedCharacter;
         private TrainerData   _selectedTrainer;
+        private Character _selectedPlacedCharacter;
+        private Trainer _selectedPlacedTrainer;
+        private int _selectedPlacedFromLane = -1;
+        private Vector3 _selectedPlacedBaseScale = Vector3.one;
 
         // Lane Y positions and lane GameObjects (set by GameBootstrap)
         private Lane[] _lanes;
@@ -50,6 +54,7 @@ namespace Gymageddon.Managers
         {
             _selectedCharacter = data;
             _selectedTrainer   = null;
+            ClearMovedUnitSelection();
             Debug.Log($"[PlacementManager] Selected character: {data.characterName}");
         }
 
@@ -57,6 +62,7 @@ namespace Gymageddon.Managers
         {
             _selectedTrainer   = data;
             _selectedCharacter = null;
+            ClearMovedUnitSelection();
             Debug.Log($"[PlacementManager] Selected trainer: {data.trainerName}");
         }
 
@@ -64,6 +70,7 @@ namespace Gymageddon.Managers
         {
             _selectedCharacter = null;
             _selectedTrainer   = null;
+            ClearMovedUnitSelection();
         }
 
         // ── Input (called every frame by Update) ──────────────────────
@@ -71,19 +78,53 @@ namespace Gymageddon.Managers
         {
             GameState? state = GameManager.Instance?.CurrentState;
             if (state != GameState.Playing && state != GameState.Preparing) return;
-            if (_selectedCharacter == null && _selectedTrainer == null) return;
+            if (!Input.GetMouseButtonDown(0)) return;
+            if (Camera.main == null) return;
 
-            if (Input.GetMouseButtonDown(0))
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit2D[] hits = Physics2D.GetRayIntersectionAll(ray);
+            if (hits == null || hits.Length == 0) return;
+
+            RaycastHit2D selectedHit = hits[0];
+            for (int i = 0; i < hits.Length; i++)
             {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit2D hit = Physics2D.GetRayIntersection(ray);
-
-                if (hit.collider != null)
+                if (hits[i].collider != null &&
+                    (hits[i].collider.GetComponentInParent<Character>() != null ||
+                     hits[i].collider.GetComponentInParent<Trainer>() != null))
                 {
-                    Lane lane = hit.collider.GetComponentInParent<Lane>();
-                    if (lane != null)
-                        TryPlaceSelected(lane.LaneIndex);
+                    selectedHit = hits[i];
+                    break;
                 }
+            }
+
+            if (selectedHit.collider == null) return;
+            Lane lane = selectedHit.collider.GetComponentInParent<Lane>();
+            if (lane == null) return;
+
+            if (_selectedCharacter != null || _selectedTrainer != null)
+            {
+                TryPlaceSelected(lane.LaneIndex);
+                return;
+            }
+
+            if (state == GameState.Preparing)
+            {
+                if (_selectedPlacedCharacter != null || _selectedPlacedTrainer != null)
+                {
+                    TryRelocateSelectedToLane(lane.LaneIndex);
+                    return;
+                }
+
+                Character clickedCharacter = selectedHit.collider.GetComponentInParent<Character>();
+                if (clickedCharacter != null && lane.OccupyingCharacter == clickedCharacter)
+                {
+                    ArmPlacedCharacterForMove(lane, clickedCharacter);
+                    return;
+                }
+
+                Trainer clickedTrainer = selectedHit.collider.GetComponentInParent<Trainer>();
+                if (clickedTrainer != null && lane.OccupyingTrainer == clickedTrainer)
+                    ArmPlacedTrainerForMove(lane, clickedTrainer);
             }
         }
 
@@ -136,6 +177,63 @@ namespace Gymageddon.Managers
             _board.PlaceTrainer(laneIndex, t);
             ClearSelection();
             return true;
+        }
+
+        private void ArmPlacedCharacterForMove(Lane lane, Character character)
+        {
+            ClearSelection();
+            _selectedPlacedCharacter = character;
+            _selectedPlacedFromLane = lane.LaneIndex;
+            _selectedPlacedBaseScale = character.transform.localScale;
+            character.transform.localScale = _selectedPlacedBaseScale * 1.08f;
+            Debug.Log($"[PlacementManager] Armed fighter from lane {lane.LaneIndex + 1} for reposition.");
+        }
+
+        private void ArmPlacedTrainerForMove(Lane lane, Trainer trainer)
+        {
+            ClearSelection();
+            _selectedPlacedTrainer = trainer;
+            _selectedPlacedFromLane = lane.LaneIndex;
+            _selectedPlacedBaseScale = trainer.transform.localScale;
+            trainer.transform.localScale = _selectedPlacedBaseScale * 1.08f;
+            Debug.Log($"[PlacementManager] Armed trainer from lane {lane.LaneIndex + 1} for reposition.");
+        }
+
+        private void TryRelocateSelectedToLane(int targetLaneIndex)
+        {
+            if (_selectedPlacedCharacter != null)
+            {
+                bool success = _board.MoveCharacter(_selectedPlacedFromLane, targetLaneIndex)
+                    || _board.SwapCharacters(_selectedPlacedFromLane, targetLaneIndex);
+                Debug.Log(success
+                    ? $"[PlacementManager] Fighter moved to lane {targetLaneIndex + 1}."
+                    : $"[PlacementManager] Cannot move fighter to lane {targetLaneIndex + 1}.");
+                ClearMovedUnitSelection();
+                return;
+            }
+
+            if (_selectedPlacedTrainer != null)
+            {
+                bool success = _board.MoveTrainer(_selectedPlacedFromLane, targetLaneIndex)
+                    || _board.SwapTrainers(_selectedPlacedFromLane, targetLaneIndex);
+                Debug.Log(success
+                    ? $"[PlacementManager] Trainer moved to lane {targetLaneIndex + 1}."
+                    : $"[PlacementManager] Cannot move trainer to lane {targetLaneIndex + 1}.");
+                ClearMovedUnitSelection();
+            }
+        }
+
+        private void ClearMovedUnitSelection()
+        {
+            if (_selectedPlacedCharacter != null)
+                _selectedPlacedCharacter.transform.localScale = _selectedPlacedBaseScale;
+            if (_selectedPlacedTrainer != null)
+                _selectedPlacedTrainer.transform.localScale = _selectedPlacedBaseScale;
+
+            _selectedPlacedCharacter = null;
+            _selectedPlacedTrainer = null;
+            _selectedPlacedFromLane = -1;
+            _selectedPlacedBaseScale = Vector3.one;
         }
 
         // ── Helpers ───────────────────────────────────────────────────

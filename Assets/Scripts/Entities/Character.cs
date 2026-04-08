@@ -22,6 +22,11 @@ namespace Gymageddon.Entities
 
         private Lane   _lane;
         private bool   _attacking;
+        private Transform _rightArm;
+        private Vector3 _rightArmBasePos;
+        private Vector3 _rightArmBaseScale;
+        private bool _attackVisualInProgress;
+        private static Sprite _projectileSprite;
 
         // ── Setup ─────────────────────────────────────────────────────
         public void Init(CharacterData data)
@@ -32,18 +37,21 @@ namespace Gymageddon.Entities
             AttackRange            = data.attackRange;
             InitHealth(data.maxHealth);
             ApplyVisual(data.bodyColor);
+            CacheModelParts();
         }
 
         public void OnPlaced(Lane lane)
         {
             _lane     = lane;
             _attacking = false;
+            _attackVisualInProgress = false;
             StartCoroutine(AttackRoutine());
         }
 
         public void OnRemoved()
         {
             StopAllCoroutines();
+            _attackVisualInProgress = false;
         }
 
         // ── Trainer buffs ─────────────────────────────────────────────
@@ -72,7 +80,10 @@ namespace Gymageddon.Entities
 
                 Enemy target = FindNearestEnemy();
                 if (target != null)
+                {
+                    PlayAttackVisual(target.transform.position);
                     target.TakeDamage(EffectiveAttackDamage);
+                }
             }
         }
 
@@ -105,6 +116,98 @@ namespace Gymageddon.Entities
         {
             SpriteRenderer sr = GetComponent<SpriteRenderer>();
             if (sr != null) sr.color = color;
+        }
+
+        private void CacheModelParts()
+        {
+            _rightArm = transform.Find("RightArm");
+            if (_rightArm == null) return;
+            _rightArmBasePos = _rightArm.localPosition;
+            _rightArmBaseScale = _rightArm.localScale;
+        }
+
+        private void PlayAttackVisual(Vector3 targetPosition)
+        {
+            if (_attackVisualInProgress) return;
+            if (AttackRange >= 3.2f)
+                StartCoroutine(ThrowVisualRoutine(targetPosition));
+            else
+                StartCoroutine(PunchVisualRoutine());
+        }
+
+        private IEnumerator PunchVisualRoutine()
+        {
+            _attackVisualInProgress = true;
+            if (_rightArm == null)
+            {
+                _attackVisualInProgress = false;
+                yield break;
+            }
+
+            float t = 0f;
+            float duration = 0.12f;
+            Vector3 endPos = _rightArmBasePos + new Vector3(0.11f, 0f, 0f);
+            Vector3 endScale = new Vector3(_rightArmBaseScale.x * 1.25f, _rightArmBaseScale.y, _rightArmBaseScale.z);
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.Clamp01(t / duration);
+                _rightArm.localPosition = Vector3.Lerp(_rightArmBasePos, endPos, k);
+                _rightArm.localScale = Vector3.Lerp(_rightArmBaseScale, endScale, k);
+                yield return null;
+            }
+
+            t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.Clamp01(t / duration);
+                _rightArm.localPosition = Vector3.Lerp(endPos, _rightArmBasePos, k);
+                _rightArm.localScale = Vector3.Lerp(endScale, _rightArmBaseScale, k);
+                yield return null;
+            }
+
+            _rightArm.localPosition = _rightArmBasePos;
+            _rightArm.localScale = _rightArmBaseScale;
+            _attackVisualInProgress = false;
+        }
+
+        private IEnumerator ThrowVisualRoutine(Vector3 targetPosition)
+        {
+            _attackVisualInProgress = true;
+            GameObject projectile = new GameObject("FighterProjectile");
+            projectile.transform.position = transform.position + new Vector3(0.25f, 0.12f, 0f);
+            projectile.transform.localScale = new Vector3(0.14f, 0.14f, 1f);
+
+            SpriteRenderer sr = projectile.AddComponent<SpriteRenderer>();
+            sr.sprite = GetProjectileSprite();
+            sr.sortingOrder = 5;
+
+            Vector3 start = projectile.transform.position;
+            Vector3 end = targetPosition + new Vector3(0f, 0.1f, 0f);
+            float t = 0f;
+            float duration = 0.16f;
+            while (t < duration && projectile != null)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.Clamp01(t / duration);
+                projectile.transform.position = Vector3.Lerp(start, end, k);
+                yield return null;
+            }
+
+            if (projectile != null)
+                Destroy(projectile);
+            _attackVisualInProgress = false;
+        }
+
+        private static Sprite GetProjectileSprite()
+        {
+            if (_projectileSprite != null) return _projectileSprite;
+            Texture2D tex = new Texture2D(1, 1);
+            tex.SetPixel(0, 0, new Color(1f, 0.95f, 0.6f));
+            tex.Apply();
+            _projectileSprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
+            return _projectileSprite;
         }
     }
 }

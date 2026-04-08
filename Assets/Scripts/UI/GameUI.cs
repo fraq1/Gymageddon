@@ -408,26 +408,40 @@ namespace Gymageddon.UI
             rt.anchorMin        = new Vector2(0.5f, 0.5f);
             rt.anchorMax        = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(xPos, 0f);
-            rt.sizeDelta        = new Vector2(100f, 100f);
+            rt.sizeDelta        = new Vector2(130f, 130f);
 
             // Type badge
             CreateText("Type", go.transform, card.TypeLabel,
                 TextAnchor.UpperCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 35f), new Vector2(95f, 24f), 11,
+                new Vector2(0f, 50f), new Vector2(120f, 24f), 11,
                 new Color(1f, 1f, 0.6f));
 
             // Unit name
             CreateText("Name", go.transform, card.Name,
                 TextAnchor.MiddleCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 5f), new Vector2(95f, 36f), 12, Color.white);
+                new Vector2(0f, 32f), new Vector2(120f, 28f), 12, Color.white);
+
+            // Stats / buff details
+            CreateText("Stats", go.transform, card.StatsSummary,
+                TextAnchor.MiddleCenter,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                new Vector2(0f, 6f), new Vector2(122f, 34f), 10, new Color(0.95f, 0.96f, 1f));
+
+            // Description
+            Text desc = CreateText("Description", go.transform, card.Description,
+                TextAnchor.UpperCenter,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                new Vector2(0f, -18f), new Vector2(120f, 46f), 9, new Color(0.86f, 0.9f, 0.94f));
+            desc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            desc.verticalOverflow = VerticalWrapMode.Truncate;
 
             // Drag hint
             CreateText("Hint", go.transform, "drag →",
                 TextAnchor.LowerCenter,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -34f), new Vector2(95f, 18f), 9,
+                new Vector2(0f, -50f), new Vector2(120f, 18f), 9,
                 new Color(0.8f, 0.8f, 0.8f, 0.7f));
 
             // Drag handler component

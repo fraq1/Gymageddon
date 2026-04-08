@@ -274,10 +274,13 @@ namespace Gymageddon.Bootstrap
             // ── Characters ─────────────────────────────────────────────
             var chars = new List<CharacterData>
             {
-                MakeCharacter("Boxer",         220, 55, 1.2f, 3f, 100, new Color(0.29f, 0.56f, 0.89f)),
-                MakeCharacter("Weightlifter",  420, 95, 0.8f, 2f, 150, new Color(0.55f, 0.27f, 0.07f)),
-                MakeCharacter("Cardio Runner", 170, 35, 2.2f, 4f, 75,  new Color(0.90f, 0.60f, 0.10f)),
+                MakeCharacter("Boxer",         220, 40, 1.2f, 3f, 100, new Color(0.29f, 0.56f, 0.89f)),
+                MakeCharacter("Weightlifter",  420, 70, 0.8f, 2f, 150, new Color(0.55f, 0.27f, 0.07f)),
+                MakeCharacter("Cardio Runner", 170, 24, 2.2f, 4f, 75,  new Color(0.90f, 0.60f, 0.10f)),
             };
+            chars[0].description = "Мощные удары на средней дистанции.";
+            chars[1].description = "Медленный, но очень живучий тяжеловес.";
+            chars[2].description = "Быстрые атаки и самый дальний радиус.";
 
             // ── Trainers ───────────────────────────────────────────────
             var trainers = new List<TrainerData>
@@ -286,23 +289,26 @@ namespace Gymageddon.Bootstrap
                 MakeTrainer("Sprint Track",    TrainerEffectType.AttackSpeedBoost, 0.45f, 0f,  50,  new Color(0.20f, 0.70f, 0.80f)),
                 MakeTrainer("Recovery Mat",    TrainerEffectType.HealthBoost,      0.50f, 0f,  60,  new Color(0.85f, 0.65f, 0.20f)),
             };
+            trainers[0].description = "Усиливает урон бойца на линии.";
+            trainers[1].description = "Ускоряет атаки бойца на линии.";
+            trainers[2].description = "Повышает максимум здоровья бойца на линии.";
 
             // ── Waves ──────────────────────────────────────────────────
-            EnemyData couchPotato = MakeEnemy("Couch Potato",  60,  10, 0.5f, 0.8f, 25, new Color(0.85f, 0.33f, 0.31f));
-            EnemyData fastFoodFan = MakeEnemy("Fast Food Fan", 80,  15, 0.8f, 1.5f, 40, new Color(0.90f, 0.55f, 0.10f));
-            EnemyData skeptic     = MakeEnemy("Fitness Skept", 40,  20, 1.2f, 2.5f, 50, new Color(0.65f, 0.20f, 0.80f));
+            EnemyData couchPotato = MakeEnemy("Couch Potato",  95,  10, 0.5f, 0.8f, 25, new Color(0.85f, 0.33f, 0.31f));
+            EnemyData fastFoodFan = MakeEnemy("Fast Food Fan", 130, 15, 0.8f, 1.5f, 40, new Color(0.90f, 0.55f, 0.10f));
+            EnemyData skeptic     = MakeEnemy("Fitness Skept", 85,  20, 1.2f, 2.5f, 50, new Color(0.65f, 0.20f, 0.80f));
 
             WaveData wave1 = CreateWaveData("Wave 1 — The Lazy",   5f,
-                new WaveData.EnemySpawn { enemyData = couchPotato, count = 5, spawnInterval = 3f, delayBeforeGroup = 0f });
+                new WaveData.EnemySpawn { enemyData = couchPotato, count = 8, spawnInterval = 2.6f, delayBeforeGroup = 0f });
 
             WaveData wave2 = CreateWaveData("Wave 2 — Junk Food",  8f,
-                new WaveData.EnemySpawn { enemyData = couchPotato, count = 4, spawnInterval = 2.5f, delayBeforeGroup = 0f },
-                new WaveData.EnemySpawn { enemyData = fastFoodFan, count = 3, spawnInterval = 3f,   delayBeforeGroup = 5f });
+                new WaveData.EnemySpawn { enemyData = couchPotato, count = 7, spawnInterval = 2.2f, delayBeforeGroup = 0f },
+                new WaveData.EnemySpawn { enemyData = fastFoodFan, count = 5, spawnInterval = 2.6f, delayBeforeGroup = 4f });
 
             WaveData wave3 = CreateWaveData("Wave 3 — The Final!", 10f,
-                new WaveData.EnemySpawn { enemyData = fastFoodFan, count = 5, spawnInterval = 2f,   delayBeforeGroup = 0f },
-                new WaveData.EnemySpawn { enemyData = skeptic,     count = 4, spawnInterval = 2.5f, delayBeforeGroup = 6f },
-                new WaveData.EnemySpawn { enemyData = couchPotato, count = 3, spawnInterval = 1.5f, delayBeforeGroup = 10f });
+                new WaveData.EnemySpawn { enemyData = fastFoodFan, count = 7, spawnInterval = 1.9f, delayBeforeGroup = 0f },
+                new WaveData.EnemySpawn { enemyData = skeptic,     count = 6, spawnInterval = 2.2f, delayBeforeGroup = 5f },
+                new WaveData.EnemySpawn { enemyData = couchPotato, count = 5, spawnInterval = 1.4f, delayBeforeGroup = 9f });
 
             return (chars, trainers, new List<WaveData> { wave1, wave2, wave3 });
         }
