@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using Gymageddon.Core;
 using Gymageddon.Data;
@@ -23,6 +22,7 @@ namespace Gymageddon.Entities
         private bool  _blocked;
         private Character _target;
         private float _retargetTimer;
+        private float _attackCooldown;
 
         // ── Setup ─────────────────────────────────────────────────────
         public void Init(EnemyData data, int laneIndex, float leftBoundary, float laneY)
@@ -33,10 +33,10 @@ namespace Gymageddon.Entities
             _leftBoundary = leftBoundary;
             _laneY        = laneY;
             _retargetTimer = 0f;
+            _attackCooldown = 0f;
 
             InitHealth(data.maxHealth);
             ApplyVisual(data.bodyColor);
-            StartCoroutine(AttackRoutine());
         }
 
         // ── Movement ──────────────────────────────────────────────────
@@ -50,9 +50,18 @@ namespace Gymageddon.Entities
             }
 
             _blocked = _target != null && !_target.IsDead && IsTargetInMeleeRange(_target);
-            if (_blocked) return;
+            _attackCooldown -= Time.deltaTime;
+            if (_attackCooldown <= 0f)
+            {
+                TryAttack();
+                _attackCooldown = Data != null && Data.attackSpeed > 0f
+                    ? 1f / Data.attackSpeed
+                    : float.MaxValue;
+            }
+
             Vector3 position = transform.position;
-            position.x -= _moveSpeed * Time.deltaTime;
+            if (!_blocked)
+                position.x -= _moveSpeed * Time.deltaTime;
             position.y = _laneY;
             transform.position = position;
 
@@ -64,23 +73,16 @@ namespace Gymageddon.Entities
         }
 
         // ── Combat ────────────────────────────────────────────────────
-        private IEnumerator AttackRoutine()
+        private void TryAttack()
         {
-            while (true)
+            if (_target == null || _target.IsDead || !IsTargetInMeleeRange(_target))
             {
-                float interval = Data.attackSpeed > 0f ? 1f / Data.attackSpeed : float.MaxValue;
-                yield return new WaitForSeconds(interval);
-
-                // Find the character blocking this lane
-                if (_target == null || _target.IsDead || !IsTargetInMeleeRange(_target))
-                {
-                    _target = FindNearestCharacterInLane();
-                    _retargetTimer = RETARGET_INTERVAL;
-                }
-
-                if (_target != null && !_target.IsDead && IsTargetInMeleeRange(_target))
-                    _target.TakeDamage(Data.attackDamage);
+                _target = FindNearestCharacterInLane();
+                _retargetTimer = RETARGET_INTERVAL;
             }
+
+            if (_target != null && !_target.IsDead && IsTargetInMeleeRange(_target))
+                _target.TakeDamage(Data.attackDamage);
         }
 
         private Character FindNearestCharacterInLane()
@@ -111,7 +113,6 @@ namespace Gymageddon.Entities
         // ── Death ─────────────────────────────────────────────────────
         protected override void OnDied()
         {
-            StopAllCoroutines();
             GameEvents.RaiseEnemyKilled(this);
             Debug.Log($"[Enemy] {Data.enemyName} in lane {LaneIndex} killed.");
         }
