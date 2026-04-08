@@ -139,7 +139,7 @@ namespace Gymageddon.Managers
             go.transform.position = new Vector3(_spawnX, y, 0f);
 
             Enemy enemy = go.AddComponent<Enemy>();
-            enemy.Init(data, lane, _leftBoundary);
+            enemy.Init(data, lane, _leftBoundary, y);
         }
 
         private (Queue<int> spawnPlan, List<int> previewLanes) BuildSpawnLanePlan(WaveData wave, int waveIndex)

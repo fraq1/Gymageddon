@@ -25,13 +25,13 @@ namespace Gymageddon.Entities
         private float _retargetTimer;
 
         // ── Setup ─────────────────────────────────────────────────────
-        public void Init(EnemyData data, int laneIndex, float leftBoundary)
+        public void Init(EnemyData data, int laneIndex, float leftBoundary, float laneY)
         {
             Data          = data;
             LaneIndex     = laneIndex;
             _moveSpeed    = data.moveSpeed;
             _leftBoundary = leftBoundary;
-            _laneY        = transform.position.y;
+            _laneY        = laneY;
             _retargetTimer = 0f;
 
             InitHealth(data.maxHealth);
