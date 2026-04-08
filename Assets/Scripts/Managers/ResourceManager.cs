@@ -23,7 +23,6 @@ namespace Gymageddon.Managers
         private void Start()
         {
             CurrentEnergy = 0;
-            GameEvents.RaiseEnergyChanged(CurrentEnergy);
         }
 
         // ── Public API ────────────────────────────────────────────────
