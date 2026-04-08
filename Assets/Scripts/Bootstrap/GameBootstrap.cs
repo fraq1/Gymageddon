@@ -33,6 +33,8 @@ namespace Gymageddon.Bootstrap
         private const float FIRST_LANE_Y    =  3.6f;  // y centre of top lane
         private const float LEFT_WALL_X     = -8.5f;  // x boundary — enemy reaching here triggers base damage
         private const float ENEMY_SPAWN_X   =  8.5f;  // x where enemies are spawned
+        private const int FLOOR_STRIPE_START = -8;
+        private const int FLOOR_STRIPE_END   = 8;
 
         // ─── Palette ───────────────────────────────────────────────────────────
         private static readonly Color[] LANE_COLORS =
@@ -152,9 +154,9 @@ namespace Gymageddon.Bootstrap
                 new Vector3(0f, midY - boardH * 0.5f - 0.35f),
                 new Vector3(BOARD_RIGHT - BOARD_LEFT, 0.7f), TOP_SHADOW_COLOR, -3);
 
-            for (int i = -8; i <= 8; i++)
+            for (int i = FLOOR_STRIPE_START; i <= FLOOR_STRIPE_END; i++)
             {
-                CreateColoredQuad($"FloorStripe_{i + 8}",
+                CreateColoredQuad($"FloorStripe_{i - FLOOR_STRIPE_START}",
                     new Vector3(i, midY),
                     new Vector3(0.06f, boardH + 0.9f), FLOOR_STRIPE_COLOR, -2);
             }
