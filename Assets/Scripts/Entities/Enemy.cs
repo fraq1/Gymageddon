@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Threading;
 using UnityEngine;
 using Gymageddon.Core;
 using Gymageddon.Data;
@@ -37,7 +38,7 @@ namespace Gymageddon.Entities
             _leftBoundary = leftBoundary;
             _laneCenterY  = laneCenterY;
             _laneHalfHeight = Mathf.Max(0.1f, laneHalfHeight);
-            float verticalSign = (_spawnCounter++ & 1) == 0 ? -1f : 1f;
+            float verticalSign = (Interlocked.Increment(ref _spawnCounter) & 1) == 0 ? -1f : 1f;
             _moveDirection = new Vector3(-1f, verticalSign * DIAGONAL_VERTICAL_FACTOR, 0f).normalized;
             _retargetTimer = 0f;
 
@@ -124,12 +125,12 @@ namespace Gymageddon.Entities
             if (pos.y < minY)
             {
                 pos.y = minY;
-                _moveDirection = new Vector3(_moveDirection.x, Mathf.Abs(_moveDirection.y), _moveDirection.z);
+                _moveDirection = new Vector3(_moveDirection.x, Mathf.Abs(_moveDirection.y), 0f);
             }
             else if (pos.y > maxY)
             {
                 pos.y = maxY;
-                _moveDirection = new Vector3(_moveDirection.x, -Mathf.Abs(_moveDirection.y), _moveDirection.z);
+                _moveDirection = new Vector3(_moveDirection.x, -Mathf.Abs(_moveDirection.y), 0f);
             }
 
             transform.position = pos;
