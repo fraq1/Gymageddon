@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Gymageddon.Core
@@ -38,6 +39,22 @@ namespace Gymageddon.Core
 
         public static event Action OnAllWavesComplete;
         public static void RaiseAllWavesComplete() => OnAllWavesComplete?.Invoke();
+
+        // ── Wave Preparation ──────────────────────────────────────────
+        /// <summary>
+        /// Raised before each wave. UI should show the 3 draggable cards and start
+        /// the countdown. When the player is ready, call GameManager.EndPreparationPhase().
+        /// </summary>
+        public static event Action<int, int, List<Data.UnitCard>, float>
+            OnPreparationPhaseStarted; // (waveNumber, totalWaves, cards, timeLimitSeconds)
+        public static void RaisePreparationPhaseStarted(
+            int waveNumber, int totalWaves,
+            List<Data.UnitCard> cards,
+            float timeLimit)
+            => OnPreparationPhaseStarted?.Invoke(waveNumber, totalWaves, cards, timeLimit);
+
+        public static event Action OnPreparationPhaseEnded;
+        public static void RaisePreparationPhaseEnded() => OnPreparationPhaseEnded?.Invoke();
     }
 
     public enum GameState

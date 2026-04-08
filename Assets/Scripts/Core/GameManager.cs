@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using Gymageddon.Data;
 
 namespace Gymageddon.Core
 {
@@ -24,20 +26,24 @@ namespace Gymageddon.Core
             Instance = this;
 
             // Subscribe to events
-            GameEvents.OnEnemyReachedBase   += HandleEnemyReachedBase;
-            GameEvents.OnAllWavesComplete   += HandleAllWavesComplete;
+            GameEvents.OnEnemyReachedBase        += HandleEnemyReachedBase;
+            GameEvents.OnAllWavesComplete        += HandleAllWavesComplete;
+            GameEvents.OnPreparationPhaseStarted += HandlePreparationPhaseStarted;
         }
 
         private void OnDestroy()
         {
-            GameEvents.OnEnemyReachedBase   -= HandleEnemyReachedBase;
-            GameEvents.OnAllWavesComplete   -= HandleAllWavesComplete;
+            GameEvents.OnEnemyReachedBase        -= HandleEnemyReachedBase;
+            GameEvents.OnAllWavesComplete        -= HandleAllWavesComplete;
+            GameEvents.OnPreparationPhaseStarted -= HandlePreparationPhaseStarted;
         }
 
         // ── Start / flow ──────────────────────────────────────────────
         private void Start()
         {
-            SetState(GameState.Playing);
+            // State starts as Preparing (default). WaveManager will raise
+            // OnPreparationPhaseStarted before the first wave, which keeps
+            // us in the Preparing state and shows the card selection UI.
             Waves.StartWaves();
         }
 
@@ -53,6 +59,24 @@ namespace Gymageddon.Core
             if (CurrentState != GameState.Paused) return;
             SetState(GameState.Playing);
             Time.timeScale = 1f;
+        }
+
+        // ── Preparation phase ─────────────────────────────────────────
+        private void HandlePreparationPhaseStarted(int waveNumber, int totalWaves,
+            List<UnitCard> cards, float timeLimit)
+        {
+            SetState(GameState.Preparing);
+        }
+
+        /// <summary>
+        /// Called by the UI when the player presses "Start Wave" or the timer runs out.
+        /// Transitions to Playing and signals WaveManager to spawn enemies.
+        /// </summary>
+        public void EndPreparationPhase()
+        {
+            if (CurrentState != GameState.Preparing) return;
+            SetState(GameState.Playing);
+            GameEvents.RaisePreparationPhaseEnded();
         }
 
         // ── Internal handlers ─────────────────────────────────────────
