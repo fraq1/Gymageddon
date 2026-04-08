@@ -237,10 +237,10 @@ namespace Gymageddon.Managers
 
         private void CreateEnemyFace(Transform parent)
         {
-            CreateFacePart(parent, "LeftEye",  new Vector3(-0.22f, 0.12f, -0.05f), new Vector3(0.18f, 0.18f, 1f), Color.white, 3);
-            CreateFacePart(parent, "RightEye", new Vector3(0.22f, 0.12f, -0.05f),  new Vector3(0.18f, 0.18f, 1f), Color.white, 3);
-            CreateFacePart(parent, "LeftPupil",  new Vector3(-0.22f, 0.12f, -0.08f), new Vector3(0.08f, 0.08f, 1f), new Color(0.08f, 0.08f, 0.08f), 4);
-            CreateFacePart(parent, "RightPupil", new Vector3(0.22f, 0.12f, -0.08f),  new Vector3(0.08f, 0.08f, 1f), new Color(0.08f, 0.08f, 0.08f), 4);
+            CreateFacePart(parent, "LeftEye", new Vector3(-0.22f, 0.12f, -0.05f), new Vector3(0.18f, 0.18f, 1f), Color.white, 3);
+            CreateFacePart(parent, "RightEye", new Vector3(0.22f, 0.12f, -0.05f), new Vector3(0.18f, 0.18f, 1f), Color.white, 3);
+            CreateFacePart(parent, "LeftPupil", new Vector3(-0.22f, 0.12f, -0.08f), new Vector3(0.08f, 0.08f, 1f), Color.black, 4);
+            CreateFacePart(parent, "RightPupil", new Vector3(0.22f, 0.12f, -0.08f), new Vector3(0.08f, 0.08f, 1f), Color.black, 4);
             CreateFacePart(parent, "Mouth", new Vector3(0f, -0.2f, -0.05f), new Vector3(0.42f, 0.10f, 1f), new Color(0.35f, 0f, 0f, 0.95f), 3);
         }
 
