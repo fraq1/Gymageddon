@@ -294,7 +294,8 @@ namespace Gymageddon.UI
             _overlayPanel = CreatePanel("Overlay", _canvas.transform,
                 new Vector2(0f, 0f), new Vector2(1f, 1f),
                 Vector2.zero, Vector2.zero,
-                new Color(0.1f, 0.1f, 0.1f, 0.85f));
+                new Color(0.1f, 0.1f, 0.1f, 0.85f),
+                true);
 
             _overlayText = CreateText("OverlayText", _overlayPanel.transform,
                 "", TextAnchor.MiddleCenter,
@@ -457,12 +458,14 @@ namespace Gymageddon.UI
         private GameObject CreatePanel(string name, Transform parent,
             Vector2 anchorMin, Vector2 anchorMax,
             Vector2 offsetMin, Vector2 offsetMax,
-            Color bgColor)
+            Color bgColor,
+            bool raycastTarget = false)
         {
             GameObject go = new GameObject(name);
             go.transform.SetParent(parent, false);
             Image img = go.AddComponent<Image>();
             img.color = bgColor;
+            img.raycastTarget = raycastTarget;
             RectTransform rt = go.GetComponent<RectTransform>();
             rt.anchorMin = anchorMin;
             rt.anchorMax = anchorMax;
