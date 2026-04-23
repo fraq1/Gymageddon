@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using Gymageddon.Core;
 using Gymageddon.Data;
 using Gymageddon.Managers;
@@ -41,6 +42,9 @@ namespace Gymageddon.UI
         private readonly List<Text> _laneDirectionRows = new List<Text>();
         private const float CardWidth = 150f;
         private const float CardSpacing = 16f;
+        private bool _preparationMenuVisible = true;
+        private Button _preparationMenuToggleButton;
+        private Text _preparationMenuToggleLabel;
 
         // Canvas root (needed by CardDragHandler for ghost parenting)
         private Canvas _canvas;
@@ -67,6 +71,9 @@ namespace Gymageddon.UI
         private void Update()
         {
             if (!_inPreparation) return;
+
+            if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
+                TogglePreparationMenu();
 
             _prepTimeRemaining -= Time.deltaTime;
             if (_prepTimerText)
@@ -135,6 +142,8 @@ namespace Gymageddon.UI
             _inPreparation     = true;
             _currentPrepWaveNumber = waveNumber;
             _prepTimeRemaining = timeLimit;
+            SetPreparationMenuVisible(true);
+            BuildPreparationMenuToggle(_canvas.transform);
 
             if (_prepWaveText)
                 _prepWaveText.text = $"Wave {waveNumber}/{totalWaves} — Place Your Units!";
@@ -155,6 +164,92 @@ namespace Gymageddon.UI
             }
 
             if (_preparationPanel) _preparationPanel.SetActive(true);
+        }
+
+        public void ShowPreparationMenu() => SetPreparationMenuVisible(true);
+
+        public void HidePreparationMenu() => SetPreparationMenuVisible(false);
+
+        public void TogglePreparationMenu() => SetPreparationMenuVisible(!_preparationMenuVisible);
+
+        public void ShowSelectionBar()
+        {
+            if (_selectionBar != null)
+                _selectionBar.SetActive(true);
+        }
+
+        public void HideSelectionBar()
+        {
+            if (_selectionBar != null)
+                _selectionBar.SetActive(false);
+        }
+
+        public void ToggleSelectionBar()
+        {
+            if (_selectionBar != null)
+                _selectionBar.SetActive(!_selectionBar.activeSelf);
+        }
+
+        private void SetPreparationMenuVisible(bool visible)
+        {
+            _preparationMenuVisible = visible;
+            if (_preparationPanel != null)
+                _preparationPanel.SetActive(visible);
+
+            RefreshPreparationMenuToggle();
+        }
+
+        private void BuildPreparationMenuToggle(Transform canvasTransform)
+        {
+            if (_preparationMenuToggleButton != null)
+            {
+                RefreshPreparationMenuToggle();
+                return;
+            }
+
+            GameObject go = new GameObject("PreparationMenuToggle");
+            go.transform.SetParent(canvasTransform, false);
+
+            Image bg = go.AddComponent<Image>();
+            bg.color = new Color(0.15f, 0.15f, 0.2f, 0.95f);
+
+            _preparationMenuToggleButton = go.AddComponent<Button>();
+            _preparationMenuToggleButton.onClick.AddListener(TogglePreparationMenu);
+
+            RectTransform rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1f, 0f);
+            rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(1f, 0f);
+            rt.anchoredPosition = new Vector2(-18f, 264f);
+            rt.sizeDelta = new Vector2(220f, 44f);
+
+            _preparationMenuToggleLabel = CreateText("PreparationMenuToggleLabel", go.transform,
+                "Скрыть меню",
+                TextAnchor.MiddleCenter,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(215f, 34f), 16, Color.white);
+
+            go.SetActive(false);
+            RefreshPreparationMenuToggle();
+        }
+
+        private void RefreshPreparationMenuToggle()
+        {
+            if (_preparationMenuToggleButton == null) return;
+
+            _preparationMenuToggleButton.gameObject.SetActive(_inPreparation);
+            if (_preparationMenuToggleLabel == null) return;
+
+            if (_preparationMenuVisible)
+            {
+                _preparationMenuToggleLabel.text = "Скрыть меню";
+                _preparationMenuToggleButton.GetComponent<Image>().color = new Color(0.15f, 0.15f, 0.2f, 0.95f);
+            }
+            else
+            {
+                _preparationMenuToggleLabel.text = "Показать меню";
+                _preparationMenuToggleButton.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.1f, 0.95f);
+            }
         }
 
         private void HandleWaveDirectionsPreviewed(int waveNumber, List<int> laneIndices)
@@ -248,7 +343,7 @@ namespace Gymageddon.UI
                 new Vector2(0f, -40f), new Vector2(0f, 0f),
                 new Color(0f, 0f, 0f, 0.6f));
 
-            _waveText = CreateText("WaveText", hud.transform, "Wave 1/5",
+            _waveText = CreateText("WaveText", hud.transform, "Wave 1/7",
                 TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(0f, 0f), new Vector2(200f, 40f), 22);
 
@@ -316,7 +411,7 @@ namespace Gymageddon.UI
 
             // ── Top row: wave name | timer | start button ──────────────
             _prepWaveText = CreateText("PrepWaveText", _preparationPanel.transform,
-                "Wave 1/5 — Place Your Units!",
+                "Wave 1/7 — Place Your Units!",
                 TextAnchor.MiddleLeft,
                 new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(12f, -22f), new Vector2(400f, 36f), 18, Color.white);

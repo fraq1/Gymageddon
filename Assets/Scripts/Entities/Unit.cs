@@ -75,6 +75,9 @@ namespace Gymageddon.Entities
             canvasGO.transform.SetParent(transform, false);
             Canvas canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
+            CanvasGroup group = canvasGO.AddComponent<CanvasGroup>();
+            group.interactable = false;
+            group.blocksRaycasts = false;
             canvasGO.transform.localPosition = new Vector3(0f, 0.65f, -0.1f);
             canvasGO.transform.localScale    = new Vector3(0.01f, 0.01f, 1f);
 
@@ -83,6 +86,7 @@ namespace Gymageddon.Entities
             bgGO.transform.SetParent(canvasGO.transform, false);
             Image bg = bgGO.AddComponent<Image>();
             bg.color = Color.black;
+            bg.raycastTarget = false;
             bg.rectTransform.sizeDelta = new Vector2(60f, 8f);
 
             // Fill
@@ -90,6 +94,7 @@ namespace Gymageddon.Entities
             fillGO.transform.SetParent(canvasGO.transform, false);
             _healthBarFill = fillGO.AddComponent<Image>();
             _healthBarFill.color = new Color(0.2f, 0.8f, 0.2f);
+            _healthBarFill.raycastTarget = false;
             _healthBarFill.rectTransform.sizeDelta = new Vector2(60f, 8f);
             _healthBarFill.rectTransform.pivot     = new Vector2(0f, 0.5f);
             _healthBarFill.rectTransform.anchoredPosition = new Vector2(-30f, 0f);

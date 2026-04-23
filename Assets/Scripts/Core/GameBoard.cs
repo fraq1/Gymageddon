@@ -61,10 +61,25 @@ namespace Gymageddon.Core
             if (fromLaneIndex == toLaneIndex) return true;
             Lane from = GetLane(fromLaneIndex);
             Lane to = GetLane(toLaneIndex);
-            if (from == null || to == null || from.OccupyingCharacter == null || !to.IsCharacterSlotEmpty)
+            if (from == null || to == null || from.OccupyingCharacter == null)
                 return false;
 
-            Character moving = from.DetachCharacterForMove();
+            Character moving = from.OccupyingCharacter;
+            Character target = to.OccupyingCharacter;
+
+            if (target != null)
+            {
+                if (target.TryEvolveWith(moving.Data))
+                {
+                    from.RemoveCharacter();
+                    return true;
+                }
+
+                if (!to.IsCharacterSlotEmpty)
+                    return false;
+            }
+
+            moving = from.DetachCharacterForMove();
             if (moving == null) return false;
             if (to.AttachMovedCharacter(moving)) return true;
             from.AttachMovedCharacter(moving);

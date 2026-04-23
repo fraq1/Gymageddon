@@ -44,7 +44,7 @@ namespace Gymageddon.Core
             }
 
             OccupyingCharacter = character;
-            character.transform.SetParent(CharacterSlot, false);
+            character.transform.SetParent(CharacterSlot, true);
             character.transform.localPosition = Vector3.zero;
             character.OnPlaced(this);
 
@@ -68,7 +68,7 @@ namespace Gymageddon.Core
             }
 
             OccupyingTrainer = trainer;
-            trainer.transform.SetParent(TrainerSlot, false);
+            trainer.transform.SetParent(TrainerSlot, true);
             trainer.transform.localPosition = Vector3.zero;
             trainer.OnPlaced(this);
 
@@ -135,7 +135,7 @@ namespace Gymageddon.Core
         {
             if (character == null || OccupyingCharacter != null) return false;
             OccupyingCharacter = character;
-            character.transform.SetParent(CharacterSlot, false);
+            character.transform.SetParent(CharacterSlot, true);
             character.transform.localPosition = Vector3.zero;
             character.OnPlaced(this);
             if (OccupyingTrainer != null)
@@ -148,7 +148,7 @@ namespace Gymageddon.Core
         {
             if (trainer == null || OccupyingTrainer != null) return false;
             OccupyingTrainer = trainer;
-            trainer.transform.SetParent(TrainerSlot, false);
+            trainer.transform.SetParent(TrainerSlot, true);
             trainer.transform.localPosition = Vector3.zero;
             trainer.OnPlaced(this);
             if (OccupyingCharacter != null)
@@ -173,5 +173,27 @@ namespace Gymageddon.Core
 
         private Color _baseColor;
         public void SetBaseColor(Color c) { _baseColor = c; }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = new Color(1f, 1f, 0f, 0.6f);
+            Gizmos.DrawWireCube(transform.position, new Vector3(9f, 2.2f, 0.02f));
+
+            if (CharacterSlot != null)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireSphere(CharacterSlot.position, 0.18f);
+                Gizmos.DrawLine(CharacterSlot.position + Vector3.up * 0.25f, CharacterSlot.position - Vector3.up * 0.25f);
+            }
+
+            if (TrainerSlot != null)
+            {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawWireSphere(TrainerSlot.position, 0.18f);
+                Gizmos.DrawLine(TrainerSlot.position + Vector3.up * 0.25f, TrainerSlot.position - Vector3.up * 0.25f);
+            }
+        }
+#endif
     }
 }
